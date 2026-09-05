@@ -140,12 +140,20 @@ export default async function VenuePublicProfile({ params }: Params) {
               ? `${venue.venue_name} has posted ${venue.total_gigs_posted} gig${venue.total_gigs_posted === 1 ? "" : "s"} on GIGLY.`
               : `${venue.venue_name} hasn't posted a gig yet.`}
           </p>
-          <Link
-            href="/gigs"
-            className="mt-4 inline-block rounded-xl bg-hot-500 px-5 py-3 text-sm font-semibold text-white hover:bg-hot-400"
-          >
-            Browse open gigs
-          </Link>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <Link
+              href={`/messages/new?to=${venue.user_id}`}
+              className="rounded-xl bg-hot-500 px-5 py-3 text-sm font-semibold text-white hover:bg-hot-400"
+            >
+              Message {venue.venue_name}
+            </Link>
+            <Link
+              href="/gigs"
+              className="rounded-xl bg-ink-700 px-5 py-3 text-sm font-semibold text-chalk hover:bg-ink-600"
+            >
+              Browse open gigs
+            </Link>
+          </div>
         </div>
       </div>
     </main>

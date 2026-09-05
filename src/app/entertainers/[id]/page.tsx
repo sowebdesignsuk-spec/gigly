@@ -177,15 +177,22 @@ export default async function EntertainerPublicProfile({ params }: Params) {
         <div className="mt-12 rounded-xl border border-ink-700 bg-ink-800 p-6">
           <p className="font-semibold text-chalk">Want to book {entertainer.stage_name}?</p>
           <p className="mt-1 text-sm text-chalk-dim">
-            Post a gig and they can apply, or message them directly. Direct
-            enquiries arrive in Week 6.
+            Message them directly, or post a gig and let them apply.
           </p>
-          <Link
-            href="/signup?type=venue"
-            className="mt-4 inline-block rounded-xl bg-hot-500 px-5 py-3 text-sm font-semibold text-white hover:bg-hot-400"
-          >
-            Post a gig
-          </Link>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <Link
+              href={`/messages/new?to=${entertainer.user_id}`}
+              className="rounded-xl bg-hot-500 px-5 py-3 text-sm font-semibold text-white hover:bg-hot-400"
+            >
+              Message {entertainer.stage_name}
+            </Link>
+            <Link
+              href="/venue/gigs/new"
+              className="rounded-xl bg-ink-700 px-5 py-3 text-sm font-semibold text-chalk hover:bg-ink-600"
+            >
+              Post a gig
+            </Link>
+          </div>
         </div>
       </div>
     </main>

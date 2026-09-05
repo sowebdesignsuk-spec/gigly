@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 
 import { GigCard, type GigCardData } from "@/components/gig/gig-card";
 import { GigFilters, type GigFilterValues } from "@/components/gig/gig-filters";
-import { Wordmark } from "@/components/layout/wordmark";
+import { SiteHeader } from "@/components/layout/site-header";
 import { createClient } from "@/lib/supabase/server";
 import { parsePoundsToPence } from "@/lib/profile/constants";
 import { resolveLocation } from "@/lib/utils/postcode";
@@ -121,19 +121,7 @@ export default async function GigsPage({ searchParams }: { searchParams: Search 
 
   return (
     <main className="flex flex-1 flex-col">
-      <header className="flex items-center justify-between border-b border-ink-700 px-6 py-5">
-        <Link href="/">
-          <Wordmark className="text-xl" />
-        </Link>
-        {!user ? (
-          <Link
-            href="/signup?type=entertainer"
-            className="rounded-xl bg-hot-500 px-4 py-2 text-sm font-semibold text-white hover:bg-hot-400"
-          >
-            Join to apply
-          </Link>
-        ) : null}
-      </header>
+      <SiteHeader />
 
       <div className="mx-auto w-full max-w-3xl flex-1 px-6 py-10">
         <div className="space-y-2">

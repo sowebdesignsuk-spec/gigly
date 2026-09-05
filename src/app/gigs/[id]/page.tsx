@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 
 import { ApplyPanel } from "@/components/gig/apply-panel";
-import { Wordmark } from "@/components/layout/wordmark";
+import { SiteHeader } from "@/components/layout/site-header";
 import { createClient } from "@/lib/supabase/server";
 import { ENTERTAINER_CATEGORIES } from "@/lib/profile/constants";
 import {
@@ -65,14 +65,7 @@ export default async function GigDetailPage({ params }: Params) {
 
   return (
     <main className="flex flex-1 flex-col">
-      <header className="flex items-center justify-between border-b border-ink-700 px-6 py-5">
-        <Link href="/">
-          <Wordmark className="text-xl" />
-        </Link>
-        <Link href="/gigs" className="text-sm text-chalk-dim hover:text-chalk">
-          All gigs
-        </Link>
-      </header>
+      <SiteHeader />
 
       <div className="mx-auto w-full max-w-3xl flex-1 px-6 py-10">
         <div className="flex flex-wrap items-center gap-2">
