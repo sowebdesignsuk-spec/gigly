@@ -46,3 +46,16 @@ export function FormMessage({ tone, children }: { tone: "error" | "success"; chi
     </p>
   );
 }
+
+export function Textarea({ className, ...props }: ComponentProps<"textarea">) {
+  return (
+    <textarea
+      className={[INPUT, "min-h-32 resize-y", className].filter(Boolean).join(" ")}
+      {...props}
+    />
+  );
+}
+
+export function Select({ className, ...props }: ComponentProps<"select">) {
+  return <select className={[INPUT, className].filter(Boolean).join(" ")} {...props} />;
+}

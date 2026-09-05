@@ -30,7 +30,7 @@ export default async function EntertainerDashboardPage() {
 
   return (
     <>
-      <AppHeader name={profile?.full_name ?? ""} />
+      <AppHeader name={profile?.full_name ?? ""} accountType="entertainer" />
 
       <main className="mx-auto w-full max-w-3xl flex-1 px-6 py-10">
         <h1 className="text-3xl font-bold">
