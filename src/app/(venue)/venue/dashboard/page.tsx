@@ -71,12 +71,22 @@ export default async function VenueDashboardPage() {
       <main className="mx-auto w-full max-w-3xl flex-1 px-6 py-10">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <h1 className="text-3xl font-bold">Hi{first ? `, ${first}` : ""}</h1>
-          <Link
-            href="/venue/gigs/new"
-            className="rounded-xl bg-hot-500 px-5 py-3 text-sm font-semibold text-white hover:bg-hot-400"
-          >
-            Post a gig
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            {venue ? (
+              <Link
+                href={`/venues/${venue.id}`}
+                className="rounded-xl border border-ink-600 bg-ink-800 px-4 py-3 text-sm font-medium text-chalk transition-colors hover:border-hot-500"
+              >
+                View public profile
+              </Link>
+            ) : null}
+            <Link
+              href="/venue/gigs/new"
+              className="rounded-xl bg-hot-500 px-5 py-3 text-sm font-semibold text-white hover:bg-hot-400"
+            >
+              Post a gig
+            </Link>
+          </div>
         </div>
 
         {!venue || !profile?.onboarding_complete ? (

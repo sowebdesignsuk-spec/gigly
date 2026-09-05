@@ -1,12 +1,11 @@
-import Image from "next/image";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
 
 import { AppHeader } from "@/components/layout/app-header";
+import { ActAvatar } from "@/components/profile/act-avatar";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/server";
-import { AVATARS_BUCKET, publicImageUrl } from "@/lib/supabase/storage";
 import { markApplicationsViewed, setApplicationStatus } from "@/lib/applications/actions";
 import { ENTERTAINER_CATEGORIES, formatPence } from "@/lib/profile/constants";
 import { milesBetween } from "@/lib/utils/distance";
@@ -116,7 +115,7 @@ export default async function GigApplicationsPage({ params }: Params) {
 
         {hasAccepted ? (
           <p className="mt-6 rounded-xl border border-go/40 bg-go/10 px-4 py-3 text-sm text-go">
-            This gig is booked. Bookings and the calendar land in Week 5.
+            This gig is booked. See it under Bookings.
           </p>
         ) : null}
 
@@ -136,7 +135,6 @@ export default async function GigApplicationsPage({ params }: Params) {
               if (!act) return null;
 
               const person = personById.get(act.user_id);
-              const avatar = publicImageUrl(AVATARS_BUCKET, person?.avatar_url);
               const distance =
                 gig.location_lat && gig.location_lng && person?.location_lat && person?.location_lng
                   ? milesBetween(gig.location_lat, gig.location_lng, person.location_lat, person.location_lng)
@@ -150,11 +148,7 @@ export default async function GigApplicationsPage({ params }: Params) {
                   className="rounded-xl border border-ink-700 bg-ink-800 p-5"
                 >
                   <div className="flex gap-4">
-                    <div className="relative size-14 shrink-0 overflow-hidden rounded-full border border-ink-600 bg-ink-900">
-                      {avatar ? (
-                        <Image src={avatar} alt="" fill sizes="56px" className="object-cover" />
-                      ) : null}
-                    </div>
+                    <ActAvatar name={act.stage_name} path={person?.avatar_url} size={56} />
 
                     <div className="min-w-0 flex-1 space-y-1">
                       <div className="flex flex-wrap items-center gap-2">

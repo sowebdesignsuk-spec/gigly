@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 
 import { SiteHeader } from "@/components/layout/site-header";
+import { ActAvatar } from "@/components/profile/act-avatar";
 import { ReviewsList, loadReviews } from "@/components/profile/reviews-list";
 import { createClient } from "@/lib/supabase/server";
 import { AVATARS_BUCKET, publicImageUrl } from "@/lib/supabase/storage";
@@ -114,15 +115,7 @@ export default async function EntertainerPublicProfile({ params }: Params) {
 
       <div className="mx-auto w-full max-w-3xl flex-1 px-6 py-12">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
-          <div className="relative size-24 shrink-0 overflow-hidden rounded-full border border-ink-600 bg-ink-800">
-            {avatar ? (
-              <Image src={avatar} alt="" fill sizes="96px" className="object-cover" />
-            ) : (
-              <span className="flex size-full items-center justify-center text-xs text-chalk-faint">
-                No photo
-              </span>
-            )}
-          </div>
+          <ActAvatar name={entertainer.stage_name} path={profile.avatar_url} size={96} />
 
           <div className="space-y-2">
             <h1 className="text-3xl font-bold">{entertainer.stage_name}</h1>

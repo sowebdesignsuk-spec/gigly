@@ -13,7 +13,7 @@
 const API = "https://api.postcodes.io";
 
 export type ResolvedLocation = {
-  /** Human-readable, e.g. "Manchester, Greater Manchester". */
+  /** Human-readable, e.g. "Rushmoor, Hampshire". */
   text: string;
   lat: number;
   lng: number;
@@ -44,6 +44,32 @@ export function looksLikePostcode(input: string): boolean {
 }
 
 /**
+ * Strips the country suffix off a stored location before searching.
+ *
+ * Locations are stored as "Town, Region" — and older rows as "Town, UK" —
+ * because that is what reads well on a profile. postcodes.io's place search
+ * matches on the place name alone and returns nothing for either form, so a
+ * saved location fed straight back into search silently found nothing and the
+ * distance filter was dropped without a word. That was a real bug.
+ */
+function placeNameOf(input: string): string {
+  const trimmed = input.trim().replace(/\s+/g, " ");
+  const withoutCountry = trimmed.replace(
+    /,\s*(uk|united kingdom|england|scotland|wales|northern ireland|gb|great britain)\s*$/i,
+    "",
+  );
+  // Anything still carrying a comma is "Town, County" — the place name is the
+  // part before it.
+  return withoutCountry.split(",")[0]!.trim();
+}
+
+/** How a place is labelled back to the user. The county disambiguates duplicate names. */
+function labelFor(place: PlaceResult): string {
+  const qualifier = place.county_unitary ?? place.region;
+  return qualifier ? `${place.name_1}, ${qualifier}` : place.name_1;
+}
+
+/**
  * Resolves a full UK postcode to coordinates.
  * Returns null for anything postcodes.io does not recognise — including valid-
  * looking but non-existent postcodes, which is the common typo case.
@@ -64,10 +90,15 @@ export async function lookupPostcode(postcode: string): Promise<ResolvedLocation
 
   if (!result?.latitude || !result.longitude) return null;
 
-  const town = result.admin_district ?? result.region ?? result.country;
+  const town = result.admin_district ?? result.region;
 
   return {
-    text: town ? `${town}, UK` : result.postcode,
+    // "Farnborough, South East" rather than "Farnborough, UK": the second half
+    // earns its place by disambiguating, and it survives a round trip through
+    // the place search.
+    text: town && result.region && town !== result.region
+      ? `${town}, ${result.region}`
+      : (town ?? result.postcode),
     lat: result.latitude,
     lng: result.longitude,
     postcode: result.postcode,
@@ -77,9 +108,13 @@ export async function lookupPostcode(postcode: string): Promise<ResolvedLocation
 /**
  * Town and city search, for users who would rather type "Manchester" than a
  * postcode. Entertainers in particular do not want to publish a home postcode.
+ *
+ * Returns every match rather than just the first — several UK towns share a
+ * name (there are two Rushmoors, 150 miles apart), and picking one blindly
+ * silently searches the wrong half of the country.
  */
 export async function searchPlaces(query: string, limit = 6): Promise<ResolvedLocation[]> {
-  const clean = query.trim();
+  const clean = placeNameOf(query);
   if (clean.length < 2) return [];
 
   const response = await fetch(
@@ -92,19 +127,24 @@ export async function searchPlaces(query: string, limit = 6): Promise<ResolvedLo
   const body = (await response.json()) as { result: PlaceResult[] | null };
 
   return (body.result ?? []).map((place) => ({
-    text: [place.name_1, place.county_unitary ?? place.region]
-      .filter(Boolean)
-      .join(", "),
+    text: labelFor(place),
     lat: place.latitude,
     lng: place.longitude,
   }));
 }
 
 /**
- * Single entry point for the profile forms: accepts either a postcode or a
- * town name and works out which it is.
+ * Single entry point for the forms: accepts either a postcode or a town name
+ * and works out which it is.
+ *
+ * `near` optionally biases the results towards a known point — the searcher's
+ * own saved location — so "Rushmoor" resolves to the one they meant rather
+ * than the one that happens to sort first.
  */
-export async function resolveLocation(input: string): Promise<ResolvedLocation[]> {
+export async function resolveLocation(
+  input: string,
+  near?: { lat: number; lng: number } | null,
+): Promise<ResolvedLocation[]> {
   const clean = input.trim();
   if (!clean) return [];
 
@@ -113,5 +153,12 @@ export async function resolveLocation(input: string): Promise<ResolvedLocation[]
     if (exact) return [exact];
   }
 
-  return searchPlaces(clean);
+  const places = await searchPlaces(clean);
+
+  if (!near || places.length < 2) return places;
+
+  const distance = (p: ResolvedLocation) =>
+    (p.lat - near.lat) ** 2 + (p.lng - near.lng) ** 2;
+
+  return [...places].sort((a, b) => distance(a) - distance(b));
 }

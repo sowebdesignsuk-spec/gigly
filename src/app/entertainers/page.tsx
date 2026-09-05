@@ -1,11 +1,10 @@
-import Image from "next/image";
 import Link from "next/link";
 import type { Metadata } from "next";
 
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
+import { ActAvatar } from "@/components/profile/act-avatar";
 import { createClient } from "@/lib/supabase/server";
-import { AVATARS_BUCKET, publicImageUrl } from "@/lib/supabase/storage";
 import { ENTERTAINER_CATEGORIES, formatPence } from "@/lib/profile/constants";
 import { milesBetween } from "@/lib/utils/distance";
 import { formatDistance } from "@/lib/utils/format";
@@ -71,9 +70,13 @@ export default async function EntertainersPage({ searchParams }: { searchParams:
   }
 
   let origin: { lat: number; lng: number } | null = null;
+  let resolvedPlace: string | null = null;
   if (near) {
     const [match] = await resolveLocation(near);
-    if (match) origin = { lat: match.lat, lng: match.lng };
+    if (match) {
+      origin = { lat: match.lat, lng: match.lng };
+      resolvedPlace = match.text;
+    }
   }
 
   const miles = radius ? Number(radius) : 50;
@@ -177,27 +180,20 @@ export default async function EntertainersPage({ searchParams }: { searchParams:
           <>
             <p className="mt-8 text-sm font-medium text-chalk-faint">
               {filtered.length} act{filtered.length === 1 ? "" : "s"}
+              {resolvedPlace ? (
+                <span className="font-normal"> · within {miles} miles of {resolvedPlace}</span>
+              ) : null}
             </p>
 
             <ul className="mt-3 grid gap-3 sm:grid-cols-2">
               {filtered.map(({ act, person, distance }) => {
-                const avatar = publicImageUrl(AVATARS_BUCKET, person?.avatar_url);
-
                 return (
                   <li key={act.id}>
                     <Link
                       href={`/entertainers/${act.id}`}
                       className="panel panel-interactive lit-edge flex h-full gap-4 p-5"
                     >
-                      <div className="relative size-16 shrink-0 overflow-hidden rounded-full border border-ink-600 bg-ink-900">
-                        {avatar ? (
-                          <Image src={avatar} alt="" fill sizes="64px" className="object-cover" />
-                        ) : (
-                          <span className="flex size-full items-center justify-center text-lg font-bold text-chalk-faint">
-                            {act.stage_name.charAt(0)}
-                          </span>
-                        )}
-                      </div>
+                      <ActAvatar name={act.stage_name} path={person?.avatar_url} size={64} />
 
                       <div className="min-w-0 flex-1">
                         <h2 className="truncate font-semibold text-chalk">{act.stage_name}</h2>

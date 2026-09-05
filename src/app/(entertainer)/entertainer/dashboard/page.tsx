@@ -98,7 +98,26 @@ export default async function EntertainerDashboardPage() {
       <AppHeader name={profile?.full_name ?? ""} accountType="entertainer" />
 
       <main className="mx-auto w-full max-w-3xl flex-1 px-6 py-10">
-        <h1 className="text-3xl font-bold">Hi{first ? `, ${first}` : ""}</h1>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h1 className="text-3xl font-bold">Hi{first ? `, ${first}` : ""}</h1>
+
+          {entertainer ? (
+            <div className="flex gap-2">
+              <Link
+                href={`/entertainers/${entertainer.id}`}
+                className="rounded-lg border border-ink-600 bg-ink-800 px-4 py-2 text-sm font-medium text-chalk transition-colors hover:border-hot-500"
+              >
+                View public profile
+              </Link>
+              <Link
+                href="/entertainer/profile"
+                className="rounded-lg bg-hot-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-hot-400"
+              >
+                Edit profile
+              </Link>
+            </div>
+          ) : null}
+        </div>
 
         {offers.length > 0 ? (
           <Link

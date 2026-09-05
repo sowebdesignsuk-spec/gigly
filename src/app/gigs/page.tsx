@@ -86,11 +86,33 @@ export default async function GigsPage({ searchParams }: { searchParams: Search 
   }
 
   // On an explicit search, coordinates come only from what was typed.
+  let resolvedPlace: string | null = null;
+  let locationFailed = false;
+
   if (userSearched && filters.near) {
-    const [match] = await resolveLocation(filters.near);
+    // Bias towards the searcher's own area, so a name shared by two towns
+    // resolves to the one they almost certainly meant.
+    let bias: { lat: number; lng: number } | null = null;
+    if (user) {
+      const { data: me } = await supabase
+        .from("profiles")
+        .select("location_lat, location_lng")
+        .eq("id", user.id)
+        .maybeSingle();
+      if (me?.location_lat && me.location_lng) {
+        bias = { lat: me.location_lat, lng: me.location_lng };
+      }
+    }
+
+    const [match] = await resolveLocation(filters.near, bias);
     if (match) {
       lat = match.lat;
       lng = match.lng;
+      resolvedPlace = match.text;
+    } else {
+      // Never silently drop the filter: a search for somewhere we cannot find
+      // must say so, not quietly return the whole country.
+      locationFailed = true;
     }
   }
 
@@ -119,7 +141,9 @@ export default async function GigsPage({ searchParams }: { searchParams: Search 
   const activeFilters = [
     filters.q ? `“${filters.q}”` : null,
     filters.category ? (CATEGORY_LABEL.get(filters.category) ?? filters.category) : null,
-    lat != null && filters.near ? `within ${radius ?? 30} miles of ${filters.near}` : null,
+    lat != null && filters.near
+      ? `within ${radius ?? 30} miles of ${resolvedPlace ?? filters.near}`
+      : null,
     filters.min ? `paying ${filters.min.startsWith("£") ? filters.min : `£${filters.min}`}+` : null,
     filters.from ? `from ${filters.from}` : null,
     filters.to ? `until ${filters.to}` : null,
@@ -158,6 +182,16 @@ export default async function GigsPage({ searchParams }: { searchParams: Search 
         ) : null}
 
         <GigFilters values={filters} />
+
+        {locationFailed ? (
+          <p
+            role="alert"
+            className="mt-4 rounded-xl border border-hold/40 bg-hold/10 px-4 py-3 text-sm text-hold"
+          >
+            We couldn&apos;t find “{filters.near}”. Showing results without the distance
+            filter — try a postcode, or a nearby town.
+          </p>
+        ) : null}
 
         {error ? (
           <p
