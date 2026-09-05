@@ -775,6 +775,39 @@ export type Database = {
       }
     }
     Functions: {
+      admin_erase_user: { Args: { p_user_id: string }; Returns: string }
+      admin_set_gig_visibility: {
+        Args: {
+          p_gig_id: string
+          p_visibility: Database["public"]["Enums"]["gig_visibility"]
+        }
+        Returns: undefined
+      }
+      admin_set_user_status: {
+        Args: {
+          p_status: Database["public"]["Enums"]["account_status"]
+          p_user_id: string
+        }
+        Returns: undefined
+      }
+      admin_stats: {
+        Args: never
+        Returns: {
+          applications_new_7d: number
+          applications_total: number
+          bookings_total: number
+          gigs_new_7d: number
+          gigs_published: number
+          gigs_total: number
+          offers_open: number
+          reviews_hidden: number
+          users_entertainers: number
+          users_new_7d: number
+          users_suspended: number
+          users_total: number
+          users_venues: number
+        }[]
+      }
       application_parties: {
         Args: { p_application_id: string }
         Returns: {
