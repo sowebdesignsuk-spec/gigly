@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 
@@ -37,7 +38,7 @@ export default async function EntertainerDashboardPage() {
           Hi{profile?.full_name ? `, ${profile.full_name.split(" ")[0]}` : ""}
         </h1>
         <p className="mt-2 text-sm text-chalk-dim">
-          Your diary is empty — because we haven&apos;t built it yet.
+          Find gigs near you, apply, and track your offers.
         </p>
 
         {!profile?.onboarding_complete ? (
@@ -51,15 +52,19 @@ export default async function EntertainerDashboardPage() {
         ) : null}
 
         <div className="mt-8 grid gap-4 sm:grid-cols-2">
-          {["Next gig", "This week", "Recommended gigs", "Recent activity"].map(
+          {[
+            { label: "Find gigs", href: "/gigs" },
+            { label: "My applications", href: "/entertainer/applications" },
+            { label: "Your profile", href: "/entertainer/profile" },
+          ].map(
             (panel) => (
-              <div
-                key={panel}
-                className="rounded-xl border border-ink-700 bg-ink-800 p-5"
+              <Link
+                key={panel.href}
+                href={panel.href}
+                className="rounded-xl border border-ink-700 bg-ink-800 p-5 transition-colors hover:border-hot-500"
               >
-                <p className="text-sm font-medium text-chalk">{panel}</p>
-                <p className="mt-1 text-xs text-chalk-faint">Coming in Week 7</p>
-              </div>
+                <p className="text-sm font-medium text-chalk">{panel.label}</p>
+              </Link>
             ),
           )}
         </div>

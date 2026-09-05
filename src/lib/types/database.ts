@@ -775,9 +775,53 @@ export type Database = {
       }
     }
     Functions: {
+      application_parties: {
+        Args: { p_application_id: string }
+        Returns: {
+          entertainer_user: string
+          gig_id: string
+          gig_title: string
+          venue_user: string
+        }[]
+      }
       is_admin: { Args: never; Returns: boolean }
+      miles_to_metres: { Args: { miles: number }; Returns: number }
       my_entertainer_id: { Args: never; Returns: string }
       my_venue_id: { Args: never; Returns: string }
+      search_gigs: {
+        Args: {
+          p_budget_min?: number
+          p_categories?: string[]
+          p_date_from?: string
+          p_date_to?: string
+          p_lat?: number
+          p_limit?: number
+          p_lng?: number
+          p_offset?: number
+          p_query?: string
+          p_radius_miles?: number
+        }
+        Returns: {
+          application_count: number
+          budget_max: number
+          budget_min: number
+          category: string
+          created_at: string
+          date: string
+          description: string
+          distance_miles: number
+          end_time: string
+          id: string
+          is_featured: boolean
+          is_urgent: boolean
+          location_text: string
+          start_time: string
+          title: string
+          venue_id: string
+          venue_name: string
+          venue_type: Database["public"]["Enums"]["venue_type"]
+        }[]
+      }
     }
     Enums: {
       account_status: "active" | "suspended" | "deleted"

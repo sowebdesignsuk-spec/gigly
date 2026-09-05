@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 
@@ -31,7 +32,7 @@ export default async function VenueDashboardPage() {
           Hi{profile?.full_name ? `, ${profile.full_name.split(" ")[0]}` : ""}
         </h1>
         <p className="mt-2 text-sm text-chalk-dim">
-          No gigs posted yet — posting lands in Week 3.
+          Post a gig, review applicants, make offers.
         </p>
 
         {!profile?.onboarding_complete ? (
@@ -45,15 +46,19 @@ export default async function VenueDashboardPage() {
         ) : null}
 
         <div className="mt-8 grid gap-4 sm:grid-cols-2">
-          {["Next event", "Open listings", "Recent applications", "Post a gig"].map(
+          {[
+            { label: "Post a gig", href: "/venue/gigs/new" },
+            { label: "My gigs", href: "/venue/gigs" },
+            { label: "Venue profile", href: "/venue/profile" },
+          ].map(
             (panel) => (
-              <div
-                key={panel}
-                className="rounded-xl border border-ink-700 bg-ink-800 p-5"
+              <Link
+                key={panel.href}
+                href={panel.href}
+                className="rounded-xl border border-ink-700 bg-ink-800 p-5 transition-colors hover:border-hot-500"
               >
-                <p className="text-sm font-medium text-chalk">{panel}</p>
-                <p className="mt-1 text-xs text-chalk-faint">Coming in Week 3</p>
-              </div>
+                <p className="text-sm font-medium text-chalk">{panel.label}</p>
+              </Link>
             ),
           )}
         </div>
