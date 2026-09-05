@@ -3,7 +3,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 
-import { Wordmark } from "@/components/layout/wordmark";
+import { SiteHeader } from "@/components/layout/site-header";
+import { ReviewsList, loadReviews } from "@/components/profile/reviews-list";
 import { createClient } from "@/lib/supabase/server";
 import { AVATARS_BUCKET, publicImageUrl } from "@/lib/supabase/storage";
 import {
@@ -79,14 +80,37 @@ export default async function EntertainerPublicProfile({ params }: Params) {
   const { entertainer, profile } = data;
   const avatar = publicImageUrl(AVATARS_BUCKET, profile.avatar_url);
   const media = Array.isArray(entertainer.media_links) ? entertainer.media_links : [];
+  const reviews = await loadReviews(entertainer.user_id);
+
+  // Structured data — Section 5, Week 8.4. A performer with a rating is the
+  // kind of thing search engines show a rich result for.
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": entertainer.categories.includes("band") ? "MusicGroup" : "Person",
+    name: entertainer.stage_name,
+    description: entertainer.bio ?? undefined,
+    image: avatar ?? undefined,
+    address: profile.location_text
+      ? { "@type": "PostalAddress", addressLocality: profile.location_text }
+      : undefined,
+    sameAs: media.map((m) => (m as { url?: string }).url).filter(Boolean),
+    ...(reviews.count > 0
+      ? {
+          aggregateRating: {
+            "@type": "AggregateRating",
+            ratingValue: reviews.average?.toFixed(1),
+            reviewCount: reviews.count,
+            bestRating: 5,
+            worstRating: 1,
+          },
+        }
+      : {}),
+  };
 
   return (
     <main className="flex flex-1 flex-col">
-      <header className="border-b border-ink-700 px-6 py-5">
-        <Link href="/">
-          <Wordmark className="text-xl" />
-        </Link>
-      </header>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <SiteHeader />
 
       <div className="mx-auto w-full max-w-3xl flex-1 px-6 py-10">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
@@ -115,10 +139,11 @@ export default async function EntertainerPublicProfile({ params }: Params) {
                 </span>
               ) : null}
               <span>Travels up to {entertainer.travel_radius_miles} miles</span>
-              {entertainer.average_rating ? (
+              {reviews.count > 0 ? (
                 <span>
-                  {Number(entertainer.average_rating).toFixed(1)} ★ over{" "}
-                  {entertainer.total_bookings} bookings
+                  {reviews.average?.toFixed(1)} ★ · {reviews.count} review
+                  {reviews.count === 1 ? "" : "s"}
+                  {entertainer.total_bookings > 0 ? ` · ${entertainer.total_bookings} bookings` : ""}
                 </span>
               ) : null}
             </div>
@@ -173,6 +198,8 @@ export default async function EntertainerPublicProfile({ params }: Params) {
             </p>
           </section>
         ) : null}
+
+        <ReviewsList reviews={reviews} of={entertainer.stage_name} />
 
         <div className="mt-12 rounded-xl border border-ink-700 bg-ink-800 p-6">
           <p className="font-semibold text-chalk">Want to book {entertainer.stage_name}?</p>

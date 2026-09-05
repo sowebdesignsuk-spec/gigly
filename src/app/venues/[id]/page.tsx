@@ -3,7 +3,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 
-import { Wordmark } from "@/components/layout/wordmark";
+import { SiteHeader } from "@/components/layout/site-header";
+import { ReviewsList, loadReviews } from "@/components/profile/reviews-list";
 import { createClient } from "@/lib/supabase/server";
 import { VENUE_PHOTOS_BUCKET, publicImageUrl } from "@/lib/supabase/storage";
 import { ENTERTAINER_CATEGORIES, VENUE_TYPES } from "@/lib/profile/constants";
@@ -49,20 +50,52 @@ export default async function VenuePublicProfile({ params }: Params) {
   if (!venue) notFound();
 
   const photos = venue.venue_photos ?? [];
+  const reviews = await loadReviews(venue.user_id);
+
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type":
+      venue.venue_type === "hotel"
+        ? "Hotel"
+        : venue.venue_type === "restaurant"
+          ? "Restaurant"
+          : "EntertainmentBusiness",
+    name: venue.venue_name,
+    description: venue.description ?? undefined,
+    url: venue.website_url ?? undefined,
+    address: {
+      "@type": "PostalAddress",
+      streetAddress: [venue.address_line_1, venue.address_line_2].filter(Boolean).join(", "),
+      addressLocality: venue.city,
+      postalCode: venue.postcode,
+      addressCountry: "GB",
+    },
+    ...(reviews.count > 0
+      ? {
+          aggregateRating: {
+            "@type": "AggregateRating",
+            ratingValue: reviews.average?.toFixed(1),
+            reviewCount: reviews.count,
+            bestRating: 5,
+            worstRating: 1,
+          },
+        }
+      : {}),
+  };
 
   return (
     <main className="flex flex-1 flex-col">
-      <header className="border-b border-ink-700 px-6 py-5">
-        <Link href="/">
-          <Wordmark className="text-xl" />
-        </Link>
-      </header>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <SiteHeader />
 
       <div className="mx-auto w-full max-w-3xl flex-1 px-6 py-10">
         <div className="space-y-2">
           <h1 className="text-3xl font-bold">{venue.venue_name}</h1>
           <p className="text-sm text-chalk-dim">
             {VENUE_TYPE_LABEL.get(venue.venue_type) ?? "Venue"} · {venue.city}, {venue.postcode}
+            {reviews.count > 0
+              ? ` · ${reviews.average?.toFixed(1)} ★ from ${reviews.count} act${reviews.count === 1 ? "" : "s"}`
+              : ""}
           </p>
           {venue.website_url ? (
             <a
@@ -132,6 +165,8 @@ export default async function VenuePublicProfile({ params }: Params) {
             {venue.postcode}
           </address>
         </section>
+
+        <ReviewsList reviews={reviews} of={venue.venue_name} />
 
         <div className="mt-12 rounded-xl border border-ink-700 bg-ink-800 p-6">
           <p className="font-semibold text-chalk">Play here</p>

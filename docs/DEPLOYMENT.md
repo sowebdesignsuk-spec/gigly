@@ -127,8 +127,8 @@ Either way, uploaded images become unreachable immediately.
 
 ## What is not built yet
 
-Weeks 5–8 of the plan: bookings and calendar, messaging, notification centre
-and email, reviews submission. The tables, RLS and realtime for all of them
-already exist; only the UI is missing. Accepting an offer currently marks the
-application `accepted` but does not yet create a `bookings` row — that is the
-first thing Week 5 does.
+Everything in the ten-week plan that can run without an external key is
+built. Waiting on keys: email via Resend (`RESEND_API_KEY`), Sentry (DSN),
+the map on gig pages (`NEXT_PUBLIC_GOOGLE_MAPS_KEY`). Notification
+preferences follow email. Phase 2 (payments, invoicing, contracts,
+subscriptions) has not been started.

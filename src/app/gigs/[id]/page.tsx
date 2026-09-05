@@ -63,8 +63,32 @@ export default async function GigDetailPage({ params }: Params) {
     data: { user },
   } = await supabase.auth.getUser();
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Event",
+    name: gig.title,
+    description: gig.description,
+    startDate: `${gig.date}T${gig.start_time}`,
+    endDate: gig.end_time ? `${gig.date}T${gig.end_time}` : undefined,
+    eventStatus:
+      gig.visibility === "cancelled"
+        ? "https://schema.org/EventCancelled"
+        : "https://schema.org/EventScheduled",
+    location: { "@type": "Place", name: venue.venue_name, address: gig.location_text },
+    organizer: { "@type": "Organization", name: venue.venue_name },
+    offers: {
+      "@type": "Offer",
+      // The fee the venue pays the act — the "price" of the gig to a performer.
+      price: (gig.budget_min / 100).toFixed(2),
+      priceCurrency: "GBP",
+      availability:
+        gig.visibility === "published" ? "https://schema.org/InStock" : "https://schema.org/SoldOut",
+    },
+  };
+
   return (
     <main className="flex flex-1 flex-col">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <SiteHeader />
 
       <div className="mx-auto w-full max-w-3xl flex-1 px-6 py-10">
