@@ -7,7 +7,7 @@ import { ActAvatar } from "@/components/profile/act-avatar";
 import { createClient } from "@/lib/supabase/server";
 import { ENTERTAINER_CATEGORIES, formatPence } from "@/lib/profile/constants";
 import { milesBetween } from "@/lib/utils/distance";
-import { formatDistance } from "@/lib/utils/format";
+import { formatDistance, plural } from "@/lib/utils/format";
 import { resolveLocation } from "@/lib/utils/postcode";
 
 export const metadata: Metadata = {
@@ -179,9 +179,9 @@ export default async function EntertainersPage({ searchParams }: { searchParams:
         ) : (
           <>
             <p className="mt-8 text-sm font-medium text-chalk-faint">
-              {filtered.length} act{filtered.length === 1 ? "" : "s"}
+              {plural(filtered.length, "act")}
               {resolvedPlace ? (
-                <span className="font-normal"> · within {miles} miles of {resolvedPlace}</span>
+                <span className="font-normal"> · within {plural(miles, "mile")} of {resolvedPlace}</span>
               ) : null}
             </p>
 

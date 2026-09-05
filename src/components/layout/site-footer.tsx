@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Wordmark } from "@/components/layout/wordmark";
 import { loadContent } from "@/lib/cms/content";
 import { ENTERTAINER_CATEGORIES } from "@/lib/profile/constants";
+import { loadSettings } from "@/lib/settings/load";
 
 const COLUMNS = [
   {
@@ -32,8 +33,19 @@ const COLUMNS = [
   },
 ];
 
+const SOCIAL = [
+  { key: "social.instagram", label: "Instagram" },
+  { key: "social.facebook", label: "Facebook" },
+  { key: "social.tiktok", label: "TikTok" },
+  { key: "social.x", label: "X" },
+];
+
 export async function SiteFooter() {
-  const t = await loadContent("footer");
+  const [t, settings] = await Promise.all([loadContent("footer"), loadSettings()]);
+
+  // Only the ones an admin has actually filled in. A dead social icon is
+  // worse than no social icon.
+  const socials = SOCIAL.map((s) => ({ ...s, url: settings.get(s.key) })).filter((s) => s.url);
 
   return (
     <footer className="border-t border-ink-700 bg-ink-950/60">
@@ -42,6 +54,23 @@ export async function SiteFooter() {
           <div>
             <Wordmark className="text-2xl" />
             <p className="mt-3 max-w-xs text-sm text-chalk-dim">{t("footer.tagline")}</p>
+
+            {socials.length > 0 ? (
+              <ul className="mt-5 flex flex-wrap gap-4">
+                {socials.map((s) => (
+                  <li key={s.key}>
+                    <a
+                      href={s.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-chalk-dim transition-colors hover:text-chalk"
+                    >
+                      {s.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
           </div>
 
           {COLUMNS.map((column) => (

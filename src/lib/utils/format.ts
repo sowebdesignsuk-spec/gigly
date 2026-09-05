@@ -80,3 +80,13 @@ export function daysUntil(iso: string): string {
   if (days < 14) return "Next week";
   return `In ${Math.round(days / 7)} weeks`;
 }
+
+/**
+ * "1 booking", "2 bookings". English pluralisation is regular often enough
+ * that a helper beats remembering the ternary at each call site — and
+ * forgetting it produces "1 bookings", which reads as carelessness about
+ * everything else on the page.
+ */
+export function plural(count: number, singular: string, pluralForm?: string): string {
+  return `${count} ${count === 1 ? singular : (pluralForm ?? `${singular}s`)}`;
+}

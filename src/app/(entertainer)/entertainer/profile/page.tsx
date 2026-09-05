@@ -6,6 +6,7 @@ import { AppHeader } from "@/components/layout/app-header";
 import { CompletenessMeter } from "@/components/profile/completeness-meter";
 import { createClient } from "@/lib/supabase/server";
 import { entertainerCompleteness } from "@/lib/profile/completeness";
+import { loadSettings } from "@/lib/settings/load";
 import type { MediaLink } from "@/lib/profile/constants";
 import { EntertainerProfileForm } from "./profile-form";
 
@@ -26,13 +27,15 @@ function asMediaLinks(value: unknown): MediaLink[] {
 
 /** Entertainer profile wizard and editor — Section 5, Week 2.1–2.4 and 2.8. */
 export default async function EntertainerProfilePage() {
-  const supabase = await createClient();
+  const [supabase, settings] = await Promise.all([createClient(), loadSettings()]);
 
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   if (!user) redirect("/login");
+
+  const defaultRadius = Number(settings.get("marketplace.default_radius_miles")) || 30;
 
   const [{ data: profile }, { data: entertainer }] = await Promise.all([
     supabase
@@ -113,7 +116,7 @@ export default async function EntertainerProfilePage() {
               startingPricePounds: entertainer?.starting_price
                 ? String(entertainer.starting_price / 100)
                 : "",
-              travelRadiusMiles: entertainer?.travel_radius_miles ?? 30,
+              travelRadiusMiles: entertainer?.travel_radius_miles ?? defaultRadius,
               mediaLinks,
             }}
           />

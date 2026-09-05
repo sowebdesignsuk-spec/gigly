@@ -44,6 +44,8 @@ expect "bookings (financial records)"      "[]" "$(get 'bookings?select=id')"
 expect "conversations"                     "[]" "$(get 'conversations?select=id')"
 expect "messages"                          "[]" "$(get 'messages?select=id')"
 expect "notifications"                     "[]" "$(get 'notifications?select=id')"
+expect "admin_audit (who erased whom)"     "[]" "$(get 'admin_audit?select=id')"
+expect "error_log"                         "[]" "$(get 'error_log?select=id')"
 expect "availability (needs sign-in)"      "[]" "$(get 'availability?select=id')"
 expect "draft gigs"                        "[]" "$(get 'gigs?select=id&visibility=eq.draft')"
 
@@ -53,6 +55,7 @@ expect "insert gig"           "401" "$(code -X POST "$URL/gigs" -d '{"venue_id":
 expect "insert application"   "401" "$(code -X POST "$URL/applications" -d '{"gig_id":"00000000-0000-0000-0000-000000000000","entertainer_id":"00000000-0000-0000-0000-000000000000"}')"
 expect "insert site_content"  "401" "$(code -X POST "$URL/site_content" -d '{"key":"home.hero.title","value":"pwned"}')"
 expect "insert app_settings"  "401" "$(code -X POST "$URL/app_settings" -d '{"key":"seo.noindex","value":"true"}')"
+expect "insert admin_audit"   "401" "$(code -X POST "$URL/admin_audit" -d '{"action":"user.erased","subject":"forged"}')"
 expect "insert booking"       "401" "$(code -X POST "$URL/bookings" -d '{"gig_id":"00000000-0000-0000-0000-000000000000","application_id":"00000000-0000-0000-0000-000000000000","venue_id":"00000000-0000-0000-0000-000000000000","entertainer_id":"00000000-0000-0000-0000-000000000000","agreed_fee":1}')"
 # A PATCH that RLS filters to zero rows returns 204, which looks like success.
 # So: target a REAL profile, ask for the updated rows back, and require none.

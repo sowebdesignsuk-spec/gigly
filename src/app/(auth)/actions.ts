@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { HOME_FOR } from "@/lib/supabase/session";
 import { siteUrl } from "@/lib/utils/site-url";
+import { loadSettings } from "@/lib/settings/load";
 import type { AccountType } from "@/lib/types/database";
 
 export type AuthState = {
@@ -23,6 +24,13 @@ export async function signUpAction(
   const fullName = String(formData.get("full_name") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
+
+  // Registration can be closed from /admin/settings. Checked here rather than
+  // only hiding the form, because hiding a form is not closing a door.
+  const settings = await loadSettings();
+  if (!settings.bool("marketplace.signups_open")) {
+    return { error: "New sign-ups are closed at the moment. Check back soon." };
+  }
 
   // account_type is immutable once set (Section 4.1), and it arrives from a
   // hidden field, so it is validated rather than trusted.

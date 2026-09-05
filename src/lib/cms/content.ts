@@ -1,3 +1,5 @@
+import { cache } from "react";
+
 import { createClient } from "@/lib/supabase/server";
 import { CONTENT_DEFAULTS, type ContentKey } from "./defaults";
 
@@ -5,11 +7,14 @@ import { CONTENT_DEFAULTS, type ContentKey } from "./defaults";
  * Reads the site copy for one page: defaults from code, overrides from the
  * site_content table layered on top.
  *
- * One query per page render, filtered to the page's prefix, so the homepage
- * never pays for the pricing page's overrides. If the table is unreachable the
- * defaults render — a database blip must not take the front door down.
+ * One query per prefix per request — cached, so a page and its footer asking
+ * for the same prefix share a single round trip. The homepage and footer use
+ * different prefixes, which is why the cache is keyed on the argument.
+ *
+ * If the table is unreachable the defaults render — a database blip must not
+ * take the front door down.
  */
-export async function loadContent(prefix: string) {
+export const loadContent = cache(async (prefix: string) => {
   const overrides = new Map<string, string>();
 
   try {
@@ -27,4 +32,4 @@ export async function loadContent(prefix: string) {
   return function t(key: ContentKey): string {
     return overrides.get(key) ?? CONTENT_DEFAULTS[key];
   };
-}
+});

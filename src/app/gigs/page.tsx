@@ -8,6 +8,7 @@ import { SiteHeader } from "@/components/layout/site-header";
 import { createClient } from "@/lib/supabase/server";
 import { ENTERTAINER_CATEGORIES, parsePoundsToPence } from "@/lib/profile/constants";
 import { resolveLocation } from "@/lib/utils/postcode";
+import { plural } from "@/lib/utils/format";
 
 export const metadata: Metadata = {
   title: "Find gigs",
@@ -142,7 +143,7 @@ export default async function GigsPage({ searchParams }: { searchParams: Search 
     filters.q ? `“${filters.q}”` : null,
     filters.category ? (CATEGORY_LABEL.get(filters.category) ?? filters.category) : null,
     lat != null && filters.near
-      ? `within ${radius ?? 30} miles of ${resolvedPlace ?? filters.near}`
+      ? `within ${plural(radius ?? 30, "mile")} of ${resolvedPlace ?? filters.near}`
       : null,
     filters.min ? `paying ${filters.min.startsWith("£") ? filters.min : `£${filters.min}`}+` : null,
     filters.from ? `from ${filters.from}` : null,
@@ -170,7 +171,7 @@ export default async function GigsPage({ searchParams }: { searchParams: Search 
               {matchedCategories?.length
                 ? ` (${matchedCategories.map((c) => CATEGORY_LABEL.get(c) ?? c).join(", ")})`
                 : ""}
-              , within {filters.radius} miles of {filters.near}.
+              , within {plural(Number(filters.radius) || 30, "mile")} of {filters.near}.
             </p>
             <Link
               href="/gigs?all=1"
@@ -220,7 +221,7 @@ export default async function GigsPage({ searchParams }: { searchParams: Search 
         ) : (
           <>
             <p className="mt-8 text-sm font-medium text-chalk-faint">
-              {results.length} gig{results.length === 1 ? "" : "s"}
+              {plural(results.length, "gig")}
               {activeFilters.length > 0 ? (
                 <span className="font-normal"> · {activeFilters.join(" · ")}</span>
               ) : null}

@@ -1,3 +1,5 @@
+import { cache } from "react";
+
 import { createClient } from "@/lib/supabase/server";
 import { settingDefault } from "./registry";
 
@@ -9,11 +11,14 @@ export type Settings = {
 /**
  * Reads app settings: defaults from code, overrides from the database.
  *
- * One query, cached per request by Next's fetch dedupe. If the table is
- * unreachable the defaults apply — a database blip must not change the site's
- * indexing rules or take the front page down.
+ * Wrapped in React's `cache`, so the root layout, the page, the header and the
+ * footer all share one query per request instead of each firing their own.
+ * Before this, rendering the homepage hit app_settings three times.
+ *
+ * If the table is unreachable the defaults apply — a database blip must not
+ * change the site's indexing rules or take the front page down.
  */
-export async function loadSettings(): Promise<Settings> {
+export const loadSettings = cache(async (): Promise<Settings> => {
   const overrides = new Map<string, string>();
 
   try {
@@ -29,7 +34,7 @@ export async function loadSettings(): Promise<Settings> {
   const get = (key: string) => overrides.get(key) ?? settingDefault(key);
 
   return { get, bool: (key: string) => get(key) === "true" };
-}
+});
 
 /** Which secrets are present, without ever revealing a value. */
 export function secretStatus(envVar: string): boolean {

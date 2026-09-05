@@ -5,6 +5,7 @@ import type { Metadata } from "next";
 
 import { SiteHeader } from "@/components/layout/site-header";
 import { ActAvatar } from "@/components/profile/act-avatar";
+import { plural } from "@/lib/utils/format";
 import { ReviewsList, loadReviews } from "@/components/profile/reviews-list";
 import { createClient } from "@/lib/supabase/server";
 import { AVATARS_BUCKET, publicImageUrl } from "@/lib/supabase/storage";
@@ -131,12 +132,12 @@ export default async function EntertainerPublicProfile({ params }: Params) {
                   </span>
                 </span>
               ) : null}
-              <span>Travels up to {entertainer.travel_radius_miles} miles</span>
+              <span>Travels up to {plural(entertainer.travel_radius_miles, "mile")}</span>
               {reviews.count > 0 ? (
                 <span>
                   {reviews.average?.toFixed(1)} ★ · {reviews.count} review
                   {reviews.count === 1 ? "" : "s"}
-                  {entertainer.total_bookings > 0 ? ` · ${entertainer.total_bookings} bookings` : ""}
+                  {entertainer.total_bookings > 0 ? ` · ${plural(entertainer.total_bookings, "booking")}` : ""}
                 </span>
               ) : null}
             </div>

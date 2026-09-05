@@ -39,6 +39,54 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_audit: {
+        Row: {
+          action: string
+          actor_email: string | null
+          actor_id: string | null
+          created_at: string
+          detail: Json
+          id: number
+          subject: string | null
+          subject_id: string | null
+        }
+        Insert: {
+          action: string
+          actor_email?: string | null
+          actor_id?: string | null
+          created_at?: string
+          detail?: Json
+          id?: never
+          subject?: string | null
+          subject_id?: string | null
+        }
+        Update: {
+          action?: string
+          actor_email?: string | null
+          actor_id?: string | null
+          created_at?: string
+          detail?: Json
+          id?: never
+          subject?: string | null
+          subject_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_audit_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "admin_audit_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       app_settings: {
         Row: {
           key: string
@@ -391,6 +439,51 @@ export type Database = {
             foreignKeyName: "entertainer_profiles_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: true
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      error_log: {
+        Row: {
+          created_at: string
+          digest: string | null
+          id: number
+          message: string
+          path: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          digest?: string | null
+          id?: never
+          message: string
+          path?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          digest?: string | null
+          id?: never
+          message?: string
+          path?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "error_log_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "error_log_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
@@ -936,6 +1029,15 @@ export type Database = {
         Returns: string
       }
       is_admin: { Args: never; Returns: boolean }
+      log_admin_action: {
+        Args: {
+          p_action: string
+          p_detail?: Json
+          p_subject?: string
+          p_subject_id?: string
+        }
+        Returns: undefined
+      }
       mark_completed_bookings: { Args: never; Returns: number }
       mark_conversation_read: {
         Args: { p_conversation_id: string }
@@ -944,6 +1046,16 @@ export type Database = {
       miles_to_metres: { Args: { miles: number }; Returns: number }
       my_entertainer_id: { Args: never; Returns: string }
       my_venue_id: { Args: never; Returns: string }
+      prune_error_log: { Args: never; Returns: undefined }
+      record_error: {
+        Args: {
+          p_digest?: string
+          p_message: string
+          p_path?: string
+          p_user_agent?: string
+        }
+        Returns: undefined
+      }
       remove_demo_data: { Args: never; Returns: string }
       search_gigs: {
         Args: {
@@ -1237,3 +1349,5 @@ export type Notification = Tables<"notifications">;
 export type ProfilePrivate = Tables<"profile_private">;
 export type SiteContent = Tables<"site_content">;
 export type AppSetting = Tables<"app_settings">;
+export type AuditEntry = Tables<"admin_audit">;
+export type ErrorEntry = Tables<"error_log">;

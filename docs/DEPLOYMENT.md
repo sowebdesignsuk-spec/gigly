@@ -108,10 +108,28 @@ boundary — the database function is.
 
 ## Error monitoring
 
-Not yet set up. `src/app/error.tsx` is the boundary where a monitor plugs in;
-until then, errors land in the Vercel function logs (Vercel → project →
-Logs). The plan names Sentry; `npx @sentry/wizard@latest -i nextjs` is the
-one-command setup once there's a DSN.
+`src/app/error.tsx` catches render and data errors, shows the user something
+they can act on, and records the error to the `error_log` table. An admin sees
+them at **/admin/errors**, kept for 30 days, rate-limited to one row per digest
+per minute so a crawler hitting a broken page cannot flood the table.
+
+That is the floor, not a replacement for Sentry — no stack traces, no releases,
+no alerting. Add `NEXT_PUBLIC_SENTRY_DSN` and run
+`npx @sentry/wizard@latest -i nextjs` when you want those. The `digest` shown on
+the error page and stored in the log is Next's server-side error id, and the
+same value appears in the Vercel function logs — that is how a report here gets
+matched to a stack trace there.
+
+## Audit log
+
+Every moderation action writes to `admin_audit`: who did it, to whom, when, and
+for erasures which of the two paths ran. Visible at **/admin/activity**.
+
+It is append-only by construction — there is no RLS policy permitting INSERT,
+UPDATE or DELETE from a client, only the SECURITY DEFINER `log_admin_action`
+function that the admin RPCs call. Under UK GDPR accountability, being able to
+erase an account is only half the requirement; showing who did it and when is
+the other half, and a log an admin can edit does not meet it.
 
 ## GDPR
 

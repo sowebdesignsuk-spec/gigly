@@ -3,13 +3,18 @@
 import { useEffect } from "react";
 
 import { Button } from "@/components/ui/button";
+import { createClient } from "@/lib/supabase/client";
 
 /**
  * Route-level error boundary — Section 5, Week 9.7.
  *
  * Catches a render or data error in any page and shows something a person can
- * act on instead of a blank screen. The `digest` is Next's server-side error
- * id, which is what to search for in the Vercel logs.
+ * act on instead of a blank screen, then records it so an admin can see it at
+ * /admin/errors. record_error is rate-limited per digest in the database, so a
+ * broken page hit by a crawler cannot flood the table.
+ *
+ * The `digest` is Next's server-side error id — the same value appears in the
+ * Vercel logs, which is how a report here gets matched to a stack trace there.
  */
 export default function ErrorPage({
   error,
@@ -19,9 +24,18 @@ export default function ErrorPage({
   reset: () => void;
 }) {
   useEffect(() => {
-    // Sentry (or whichever monitor is chosen) hooks in here. Until one is
-    // wired up, the console is where this lands.
     console.error(error);
+
+    // Best-effort. An error while reporting an error must not surface a second
+    // error page to the user.
+    void createClient()
+      .rpc("record_error", {
+        p_message: error.message || "Unknown error",
+        p_digest: error.digest ?? undefined,
+        p_path: window.location.pathname,
+        p_user_agent: navigator.userAgent,
+      })
+      .then(undefined, () => {});
   }, [error]);
 
   return (

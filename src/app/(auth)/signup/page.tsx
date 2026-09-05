@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 
 import { SignUpForm } from "./signup-form";
+import { loadSettings } from "@/lib/settings/load";
 
 export const metadata: Metadata = { title: "Sign up" };
 
@@ -25,6 +26,28 @@ export default async function SignUpPage({
 }) {
   const { type } = await searchParams;
   const choice = CHOICES.find((c) => c.type === type);
+  const settings = await loadSettings();
+
+  if (!settings.bool("marketplace.signups_open")) {
+    return (
+      <div className="space-y-6">
+        <h1 className="text-3xl font-bold">Sign-ups are closed</h1>
+        <p className="text-chalk-dim">
+          We&apos;re not taking new accounts right now. Existing members can still{" "}
+          <Link href="/login" className="text-hot-500 hover:text-hot-400">
+            log in
+          </Link>
+          .
+        </p>
+        <Link
+          href="/gigs"
+          className="inline-block rounded-xl bg-hot-500 px-5 py-3 text-sm font-semibold text-white hover:bg-hot-400"
+        >
+          Browse gigs anyway
+        </Link>
+      </div>
+    );
+  }
 
   // Section 5, Week 1.5 — account type selection, shown before the form. Split
   // across two steps rather than a dropdown because account_type is immutable
