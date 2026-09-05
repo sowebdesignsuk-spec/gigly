@@ -87,12 +87,12 @@ export async function loginAction(
     redirect(next);
   }
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("account_type")
-    .eq("id", data.user.id)
-    .single();
+  const [{ data: profile }, { data: priv }] = await Promise.all([
+    supabase.from("profiles").select("account_type").eq("id", data.user.id).single(),
+    supabase.from("profile_private").select("role").eq("user_id", data.user.id).maybeSingle(),
+  ]);
 
+  if (priv?.role === "admin") redirect("/admin");
   redirect(profile ? HOME_FOR[profile.account_type] : "/");
 }
 

@@ -70,6 +70,11 @@ it after any migration touching a policy. It exits non-zero on failure.
 
 ## Making someone an admin
 
+Admin accounts are dedicated accounts, not promoted customers. Create one in
+Supabase → Authentication → Users → **Add user → Create new user** (tick Auto
+Confirm), then promote it in the SQL editor. Admins sign in at `/admin-login`
+and land on `/admin`; the normal login also works and routes them there.
+
 There is no self-service route to admin. In the Supabase SQL editor:
 
 ```sql

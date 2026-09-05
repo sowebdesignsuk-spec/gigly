@@ -113,16 +113,15 @@ export async function updateSession(request: NextRequest) {
   }
 
   // Signed-in users have no business on the login or signup pages.
-  if (user && (path === "/login" || path === "/signup")) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("account_type")
-      .eq("id", user.id)
-      .single();
+  if (user && (path === "/login" || path === "/signup" || path === "/admin-login")) {
+    const [{ data: profile }, { data: priv }] = await Promise.all([
+      supabase.from("profiles").select("account_type").eq("id", user.id).single(),
+      supabase.from("profile_private").select("role").eq("user_id", user.id).maybeSingle(),
+    ]);
 
     if (profile) {
       const home = request.nextUrl.clone();
-      home.pathname = HOME_FOR[profile.account_type];
+      home.pathname = priv?.role === "admin" ? "/admin" : HOME_FOR[profile.account_type];
       home.search = "";
       return NextResponse.redirect(home);
     }
