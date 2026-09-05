@@ -39,6 +39,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      app_settings: {
+        Row: {
+          key: string
+          updated_at: string
+          updated_by: string | null
+          value: string
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: string
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "app_settings_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "app_settings_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       applications: {
         Row: {
           created_at: string
@@ -944,6 +980,9 @@ export type Database = {
         }[]
       }
       seed_demo_data: { Args: never; Returns: string }
+      seed_demo_data_extras: { Args: never; Returns: string }
+      seed_demo_extra: { Args: never; Returns: undefined }
+      seed_demo_media: { Args: never; Returns: undefined }
       unread_message_count: { Args: never; Returns: number }
     }
     Enums: {
@@ -1197,3 +1236,4 @@ export type Review = Tables<"reviews">;
 export type Notification = Tables<"notifications">;
 export type ProfilePrivate = Tables<"profile_private">;
 export type SiteContent = Tables<"site_content">;
+export type AppSetting = Tables<"app_settings">;

@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 
 import { createClient } from "@/lib/supabase/server";
+import { loadSettings } from "@/lib/settings/load";
 
 /**
  * Sitemap — Section 5, Week 8.4, the other half of "SEO-friendly".
@@ -10,8 +11,8 @@ import { createClient } from "@/lib/supabase/server";
  * so nothing private can leak in here even if a filter is later removed.
  */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const base = process.env.NEXT_PUBLIC_SITE_URL ?? "https://gigly-gilt.vercel.app";
-  const supabase = await createClient();
+  const [settings, supabase] = await Promise.all([loadSettings(), createClient()]);
+  const base = settings.get("site.url");
   const today = new Date().toISOString().slice(0, 10);
 
   const [{ data: gigs }, { data: entertainers }, { data: venues }] = await Promise.all([

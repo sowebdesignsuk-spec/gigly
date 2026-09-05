@@ -3,12 +3,14 @@ import type { Metadata } from "next";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
 import { loadContent } from "@/lib/cms/content";
+import { loadSettings } from "@/lib/settings/load";
 
 export const metadata: Metadata = { title: "Contact" };
 
 export default async function ContactPage() {
-  const t = await loadContent("contact");
-  const email = t("contact.email");
+  const [t, settings] = await Promise.all([loadContent("contact"), loadSettings()]);
+  // The setting wins: it is the one an admin edits in a single place.
+  const email = settings.get("site.contact_email") || t("contact.email");
 
   return (
     <div className="grain flex flex-1 flex-col">

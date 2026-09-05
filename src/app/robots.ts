@@ -1,7 +1,16 @@
 import type { MetadataRoute } from "next";
 
-export default function robots(): MetadataRoute.Robots {
-  const base = process.env.NEXT_PUBLIC_SITE_URL ?? "https://gigly-gilt.vercel.app";
+import { loadSettings } from "@/lib/settings/load";
+
+export default async function robots(): Promise<MetadataRoute.Robots> {
+  const settings = await loadSettings();
+  const base = settings.get("site.url");
+
+  // The admin "Hide from search engines" switch. Site-wide and deliberately
+  // blunt — it is for a site that is not ready, not for fine-tuning.
+  if (settings.bool("seo.noindex")) {
+    return { rules: { userAgent: "*", disallow: "/" } };
+  }
 
   return {
     rules: {
