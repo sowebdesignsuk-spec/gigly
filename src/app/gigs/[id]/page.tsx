@@ -87,11 +87,11 @@ export default async function GigDetailPage({ params }: Params) {
   };
 
   return (
-    <main className="flex flex-1 flex-col">
+    <main className="grain flex flex-1 flex-col">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <SiteHeader />
 
-      <div className="mx-auto w-full max-w-3xl flex-1 px-6 py-10">
+      <div className="mx-auto w-full max-w-3xl flex-1 px-6 py-12">
         <div className="flex flex-wrap items-center gap-2">
           {gig.is_urgent ? (
             <span className="rounded-full bg-hot-500/15 px-2.5 py-0.5 text-xs font-semibold text-hot-400">
@@ -108,7 +108,7 @@ export default async function GigDetailPage({ params }: Params) {
           ) : null}
         </div>
 
-        <h1 className="mt-3 text-3xl font-bold">{gig.title}</h1>
+        <h1 className="mt-4 text-4xl font-extrabold tracking-tight text-balance">{gig.title}</h1>
 
         <p className="mt-2 text-sm text-chalk-dim">
           <Link href={`/venues/${venue.id}`} className="text-hot-500 hover:text-hot-400">
@@ -117,20 +117,20 @@ export default async function GigDetailPage({ params }: Params) {
           · {gig.location_text}
         </p>
 
-        <dl className="mt-8 grid gap-4 rounded-xl border border-ink-700 bg-ink-800 p-5 sm:grid-cols-3">
+        <dl className="panel lit-edge mt-8 grid gap-5 p-6 sm:grid-cols-3">
           <div>
             <dt className="text-xs tracking-wide text-chalk-faint uppercase">Date</dt>
-            <dd className="mt-1 text-sm font-medium text-chalk">{formatGigDateLong(gig.date)}</dd>
+            <dd className="mt-1.5 font-semibold text-chalk">{formatGigDateLong(gig.date)}</dd>
           </div>
           <div>
             <dt className="text-xs tracking-wide text-chalk-faint uppercase">Time</dt>
-            <dd className="mt-1 text-sm font-medium text-chalk">
+            <dd className="mt-1.5 font-semibold text-chalk">
               {formatTimeRange(gig.start_time, gig.end_time)}
             </dd>
           </div>
           <div>
             <dt className="text-xs tracking-wide text-chalk-faint uppercase">Fee</dt>
-            <dd className="mt-1 text-sm font-medium text-chalk">
+            <dd className="mt-1.5 text-lg font-bold text-hot-400">
               {formatFee(gig.budget_min, gig.budget_max)}
             </dd>
           </div>

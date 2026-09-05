@@ -108,11 +108,11 @@ export default async function EntertainerPublicProfile({ params }: Params) {
   };
 
   return (
-    <main className="flex flex-1 flex-col">
+    <main className="grain flex flex-1 flex-col">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <SiteHeader />
 
-      <div className="mx-auto w-full max-w-3xl flex-1 px-6 py-10">
+      <div className="mx-auto w-full max-w-3xl flex-1 px-6 py-12">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
           <div className="relative size-24 shrink-0 overflow-hidden rounded-full border border-ink-600 bg-ink-800">
             {avatar ? (

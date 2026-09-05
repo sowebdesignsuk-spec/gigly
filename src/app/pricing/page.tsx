@@ -11,10 +11,10 @@ export default async function PricingPage() {
   const t = await loadContent("pricing");
 
   return (
-    <>
+    <div className="grain flex flex-1 flex-col">
       <SiteHeader />
-      <main className="mx-auto w-full max-w-3xl flex-1 px-6 py-16">
-        <h1 className="text-4xl font-extrabold tracking-tight text-balance">{t("pricing.title")}</h1>
+      <main className="stage-wash mx-auto w-full max-w-3xl flex-1 px-6 py-20">
+        <h1 className="text-4xl font-extrabold tracking-tight text-balance sm:text-5xl">{t("pricing.title")}</h1>
         <p className="mt-4 text-lg text-chalk-dim">{t("pricing.body")}</p>
 
         <div className="mt-10 grid gap-5 md:grid-cols-2">
@@ -38,6 +38,6 @@ export default async function PricingPage() {
         </div>
       </main>
       <SiteFooter />
-    </>
+    </div>
   );
 }

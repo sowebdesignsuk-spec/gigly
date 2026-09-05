@@ -11,6 +11,7 @@
   /* Surfaces, darkest to lightest */
   --color-ink-950: #08080c;
   --color-ink-900: #0b0b12;
+  --color-ink-850: #101018;
   --color-ink-800: #14141d;
   --color-ink-700: #1d1d29;
   --color-ink-600: #2a2a3a;
@@ -21,9 +22,14 @@
   --color-chalk-faint: #6d6d80;
 
   /* Brand — hot pink */
+  --color-hot-300: #ff8fb8;
   --color-hot-400: #ff5c9a;
   --color-hot-500: #ff2d78;
   --color-hot-600: #e11060;
+
+  /* A cooler second accent, used only in gradients so the pink has something
+     to travel towards. Never on its own — one brand colour, not two. */
+  --color-ultra: #7c3aed;
 
   /* Status */
   --color-go: #34d399;
@@ -33,6 +39,7 @@
   --font-sans: var(--font-outfit), ui-sans-serif, system-ui, sans-serif;
 
   --radius-xl: 0.875rem;
+  --radius-2xl: 1.25rem;
 }
 
 html {
@@ -49,4 +56,151 @@ body {
 :focus-visible {
   outline: 2px solid var(--color-hot-500);
   outline-offset: 2px;
+}
+
+/* ---------------------------------------------------------------------------
+   Stage lighting
+
+   The one visual idea on the public pages: a venue is a dark room with a
+   coloured wash over it. Built from radial gradients rather than images, so it
+   costs nothing to load and scales to any viewport.
+   --------------------------------------------------------------------------- */
+
+.stage-wash {
+  position: relative;
+  isolation: isolate;
+  /* The glow below is deliberately wider than its container so the light
+     doesn't stop at a hard edge. Clip it here, or that overhang becomes a
+     horizontal scrollbar on the whole page. */
+  overflow-x: clip;
+}
+
+.stage-wash::before {
+  content: "";
+  position: absolute;
+  inset: -20% -10% auto -10%;
+  height: 46rem;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(42rem 26rem at 18% 0%, color-mix(in oklab, var(--color-hot-500) 26%, transparent), transparent 70%),
+    radial-gradient(34rem 24rem at 82% 12%, color-mix(in oklab, var(--color-ultra) 22%, transparent), transparent 70%);
+  filter: blur(8px);
+}
+
+/* A quieter version for section headers further down the page. */
+.stage-wash-soft {
+  overflow-x: clip;
+}
+
+.stage-wash-soft::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(
+    36rem 18rem at 50% 0%,
+    color-mix(in oklab, var(--color-hot-500) 10%, transparent),
+    transparent 72%
+  );
+}
+
+/* Film grain. Without it, large flat dark areas band badly on cheap panels —
+   which is most phones in most pubs. */
+.grain::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  pointer-events: none;
+  opacity: 0.028;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ---------------------------------------------------------------------------
+   Surfaces
+
+   Three levels of card, by role rather than by decoration: a plain panel, one
+   that is interactive, and one that is the point of the page.
+   --------------------------------------------------------------------------- */
+
+.panel {
+  background: linear-gradient(180deg, var(--color-ink-800), var(--color-ink-850));
+  border: 1px solid var(--color-ink-700);
+  border-radius: var(--radius-xl);
+}
+
+.panel-interactive {
+  transition:
+    border-color 150ms ease,
+    transform 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.panel-interactive:hover {
+  border-color: color-mix(in oklab, var(--color-hot-500) 55%, transparent);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 32px -18px color-mix(in oklab, var(--color-hot-500) 60%, transparent);
+}
+
+/* The hairline top edge that catches the "light" — one pixel, does a lot. */
+.lit-edge {
+  position: relative;
+}
+
+.lit-edge::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  border-radius: inherit;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in oklab, var(--color-hot-400) 45%, transparent),
+    transparent
+  );
+}
+
+/* Text that carries the brand gradient. Used once per page at most. */
+.gradient-text {
+  background: linear-gradient(120deg, var(--color-chalk) 20%, var(--color-hot-400) 60%, var(--color-hot-500));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* ---------------------------------------------------------------------------
+   Entrance
+
+   One animation, used on the hero only, and only for people who want it. A
+   marketplace page that reassembles itself on every visit is exhausting.
+   --------------------------------------------------------------------------- */
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.rise {
+  animation: rise 600ms cubic-bezier(0.2, 0.7, 0.3, 1) backwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rise {
+    animation: none;
+  }
+  .panel-interactive:hover {
+    transform: none;
+  }
+  * {
+    scroll-behavior: auto !important;
+  }
 }

@@ -3,9 +3,10 @@ import type { Metadata } from "next";
 
 import { GigCard, type GigCardData } from "@/components/gig/gig-card";
 import { GigFilters, type GigFilterValues } from "@/components/gig/gig-filters";
+import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
 import { createClient } from "@/lib/supabase/server";
-import { parsePoundsToPence } from "@/lib/profile/constants";
+import { ENTERTAINER_CATEGORIES, parsePoundsToPence } from "@/lib/profile/constants";
 import { resolveLocation } from "@/lib/utils/postcode";
 
 export const metadata: Metadata = {
@@ -16,6 +17,8 @@ export const metadata: Metadata = {
 
 type Search = Promise<Record<string, string | string[] | undefined>>;
 
+const CATEGORY_LABEL = new Map(ENTERTAINER_CATEGORIES.map((c) => [c.value as string, c.label]));
+
 function one(value: string | string[] | undefined): string | undefined {
   const first = Array.isArray(value) ? value[0] : value;
   return first?.trim() || undefined;
@@ -24,13 +27,19 @@ function one(value: string | string[] | undefined): string | undefined {
 /**
  * Public gig browse — Section 5, Week 3.3–3.5, 3.7.
  *
- * Public so listings are indexable (Section 2.2). Signed-in entertainers get
- * their own location and travel radius applied by default, which is the
- * "matching" of Week 3.8: the first thing they see is already relevant.
+ * Public so listings are indexable (Section 2.2).
+ *
+ * Personalisation applies only on a *clean* visit — no search parameters at
+ * all. The moment someone submits the filter form, the URL is taken literally.
+ * Doing otherwise means the form says "Category: Any" while the query quietly
+ * narrows to the act's own categories, and an empty result looks like a broken
+ * search rather than a filter the user never chose.
  */
 export default async function GigsPage({ searchParams }: { searchParams: Search }) {
   const params = await searchParams;
   const supabase = await createClient();
+
+  const userSearched = Object.keys(params).length > 0;
 
   const filters: GigFilterValues = {
     q: one(params.q),
@@ -46,15 +55,12 @@ export default async function GigsPage({ searchParams }: { searchParams: Search 
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Defaults from the signed-in entertainer's own profile, used only where the
-  // URL doesn't already say otherwise.
-  let defaultLat: number | null = null;
-  let defaultLng: number | null = null;
-  let defaultRadius: number | null = null;
-  let defaultCategories: string[] | null = null;
+  let matchedCategories: string[] | null = null;
   let personalised = false;
+  let lat: number | null = null;
+  let lng: number | null = null;
 
-  if (user) {
+  if (user && !userSearched) {
     const [{ data: profile }, { data: entertainer }] = await Promise.all([
       supabase
         .from("profiles")
@@ -69,22 +75,18 @@ export default async function GigsPage({ searchParams }: { searchParams: Search 
     ]);
 
     if (profile?.account_type === "entertainer" && profile.location_lat && profile.location_lng) {
-      defaultLat = profile.location_lat;
-      defaultLng = profile.location_lng;
-      defaultRadius = entertainer?.travel_radius_miles ?? 30;
-      defaultCategories = entertainer?.categories?.length ? entertainer.categories : null;
+      lat = profile.location_lat;
+      lng = profile.location_lng;
       personalised = true;
+      matchedCategories = entertainer?.categories?.length ? entertainer.categories : null;
 
-      if (!filters.near) filters.near = profile.location_text ?? undefined;
-      if (!filters.radius) filters.radius = String(defaultRadius);
+      filters.near = profile.location_text ?? undefined;
+      filters.radius = String(entertainer?.travel_radius_miles ?? 30);
     }
   }
 
-  // A typed location overrides the profile default.
-  let lat = defaultLat;
-  let lng = defaultLng;
-
-  if (filters.near) {
+  // On an explicit search, coordinates come only from what was typed.
+  if (userSearched && filters.near) {
     const [match] = await resolveLocation(filters.near);
     if (match) {
       lat = match.lat;
@@ -92,23 +94,16 @@ export default async function GigsPage({ searchParams }: { searchParams: Search 
     }
   }
 
-  const radius = filters.radius ? Number(filters.radius) : defaultRadius;
-  const categories = filters.category
-    ? [filters.category]
-    : // Only narrow to the act's own categories when they haven't searched or
-      // filtered themselves — otherwise a deliberate search returns nothing and
-      // looks broken.
-      !filters.q && personalised
-      ? defaultCategories
-      : null;
+  const radiusNumber = filters.radius ? Number(filters.radius) : null;
+  const radius =
+    radiusNumber && Number.isFinite(radiusNumber) ? Math.round(radiusNumber) : undefined;
 
-  // The generated RPC types express "not supplied" as undefined, not null.
   const { data: gigs, error } = await supabase.rpc("search_gigs", {
     p_lat: lat ?? undefined,
     p_lng: lng ?? undefined,
-    p_radius_miles:
-      radius && Number.isFinite(radius) ? Math.round(radius) : undefined,
-    p_categories: categories ?? undefined,
+    // A radius is meaningless without a point to measure from.
+    p_radius_miles: lat != null && lng != null ? radius : undefined,
+    p_categories: filters.category ? [filters.category] : (matchedCategories ?? undefined),
     p_date_from: filters.from,
     p_date_to: filters.to,
     p_budget_min: filters.min ? (parsePoundsToPence(filters.min) ?? undefined) : undefined,
@@ -119,41 +114,82 @@ export default async function GigsPage({ searchParams }: { searchParams: Search 
 
   const results = (gigs ?? []) as GigCardData[];
 
+  // What is actually narrowing the results, in the user's words. Shown above
+  // the list so an empty page always explains itself.
+  const activeFilters = [
+    filters.q ? `“${filters.q}”` : null,
+    filters.category ? (CATEGORY_LABEL.get(filters.category) ?? filters.category) : null,
+    lat != null && filters.near ? `within ${radius ?? 30} miles of ${filters.near}` : null,
+    filters.min ? `paying ${filters.min.startsWith("£") ? filters.min : `£${filters.min}`}+` : null,
+    filters.from ? `from ${filters.from}` : null,
+    filters.to ? `until ${filters.to}` : null,
+  ].filter(Boolean) as string[];
+
   return (
-    <main className="flex flex-1 flex-col">
+    <div className="grain flex flex-1 flex-col">
       <SiteHeader />
 
-      <div className="mx-auto w-full max-w-3xl flex-1 px-6 py-10">
-        <div className="space-y-2">
-          <h1 className="text-3xl font-bold">Find gigs</h1>
-          <p className="text-sm text-chalk-dim">
-            {personalised && !filters.q
-              ? "Filtered to what you do, within your travel radius. Change anything below."
-              : "Live entertainment work across the UK."}
+      <div className="stage-wash">
+        <div className="mx-auto w-full max-w-3xl px-6 pt-12 pb-6">
+          <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl">Find gigs</h1>
+          <p className="mt-3 text-chalk-dim">
+            Live entertainment work across the UK. Browse without an account.
           </p>
         </div>
+      </div>
 
-        <div className="mt-6">
-          <GigFilters values={filters} />
-        </div>
+      <main className="mx-auto w-full max-w-3xl flex-1 px-6 pb-16">
+        {personalised ? (
+          <div className="panel mb-4 flex flex-wrap items-center justify-between gap-3 p-4">
+            <p className="text-sm text-chalk-dim">
+              Matched to your act
+              {matchedCategories?.length
+                ? ` (${matchedCategories.map((c) => CATEGORY_LABEL.get(c) ?? c).join(", ")})`
+                : ""}
+              , within {filters.radius} miles of {filters.near}.
+            </p>
+            <Link
+              href="/gigs?all=1"
+              className="shrink-0 text-sm font-semibold text-hot-500 hover:text-hot-400"
+            >
+              Show everything →
+            </Link>
+          </div>
+        ) : null}
+
+        <GigFilters values={filters} />
 
         {error ? (
-          <p role="alert" className="mt-8 rounded-xl border border-stop/40 bg-stop/10 p-5 text-sm text-stop">
+          <p
+            role="alert"
+            className="mt-8 rounded-xl border border-stop/40 bg-stop/10 p-5 text-sm text-stop"
+          >
             Search isn&apos;t responding right now. Try again in a moment.
           </p>
         ) : results.length === 0 ? (
-          <div className="mt-8 rounded-xl border border-ink-700 bg-ink-800 p-6">
-            <p className="font-semibold text-chalk">No gigs match that</p>
-            <p className="mt-1 text-sm text-chalk-dim">
-              {personalised
-                ? "Try widening your travel radius, or clearing the filters to see everything."
-                : "Try a wider radius or fewer filters."}
+          <div className="panel lit-edge mt-8 p-10 text-center">
+            <p className="text-lg font-semibold text-chalk">No gigs match that</p>
+            <p className="mx-auto mt-2 max-w-md text-sm text-chalk-dim">
+              {activeFilters.length > 0
+                ? `Nothing open ${activeFilters.join(", ")}. Try widening the radius or dropping a filter.`
+                : "There are no gigs open at the moment. Check back soon."}
             </p>
+            {activeFilters.length > 0 ? (
+              <Link
+                href="/gigs?all=1"
+                className="mt-6 inline-block rounded-xl bg-hot-500 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-hot-400"
+              >
+                Show all gigs
+              </Link>
+            ) : null}
           </div>
         ) : (
           <>
-            <p className="mt-8 text-sm text-chalk-faint">
+            <p className="mt-8 text-sm font-medium text-chalk-faint">
               {results.length} gig{results.length === 1 ? "" : "s"}
+              {activeFilters.length > 0 ? (
+                <span className="font-normal"> · {activeFilters.join(" · ")}</span>
+              ) : null}
             </p>
             <ul className="mt-3 space-y-3">
               {results.map((gig) => (
@@ -162,7 +198,9 @@ export default async function GigsPage({ searchParams }: { searchParams: Search 
             </ul>
           </>
         )}
-      </div>
-    </main>
+      </main>
+
+      <SiteFooter />
+    </div>
   );
 }

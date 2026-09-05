@@ -11,10 +11,10 @@ export default async function ContactPage() {
   const email = t("contact.email");
 
   return (
-    <>
+    <div className="grain flex flex-1 flex-col">
       <SiteHeader />
-      <main className="mx-auto w-full max-w-2xl flex-1 px-6 py-16">
-        <h1 className="text-4xl font-extrabold tracking-tight text-balance">{t("contact.title")}</h1>
+      <main className="stage-wash mx-auto w-full max-w-2xl flex-1 px-6 py-20">
+        <h1 className="text-4xl font-extrabold tracking-tight text-balance sm:text-5xl">{t("contact.title")}</h1>
         <p className="mt-4 text-lg leading-relaxed text-chalk-dim">{t("contact.body")}</p>
 
         <a
@@ -30,6 +30,6 @@ export default async function ContactPage() {
         </p>
       </main>
       <SiteFooter />
-    </>
+    </div>
   );
 }

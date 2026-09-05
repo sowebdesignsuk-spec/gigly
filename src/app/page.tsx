@@ -1,8 +1,9 @@
 import Link from "next/link";
 
+import { CategoryStrip } from "@/components/marketing/category-strip";
+import { HeroGigs, type HeroGig } from "@/components/marketing/hero-gigs";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
-import { Wordmark } from "@/components/layout/wordmark";
 import { loadContent } from "@/lib/cms/content";
 import { createClient } from "@/lib/supabase/server";
 
@@ -10,140 +11,240 @@ import { createClient } from "@/lib/supabase/server";
  * The public homepage.
  *
  * Copy comes from the CMS (defaults in src/lib/cms/defaults.ts, overrides in
- * site_content). The live gig count is the one dynamic thing on the page and
- * is deliberately real — a marketplace homepage that says "hundreds of gigs"
- * over an empty database is the kind of lie people remember.
+ * site_content). Every figure on the page is read from the database — a
+ * marketplace homepage that claims numbers it doesn't have is the kind of lie
+ * people remember, and each of these degrades to nothing when it is zero.
  */
 export default async function HomePage() {
   const [t, supabase] = await Promise.all([loadContent("home"), createClient()]);
-
   const today = new Date().toISOString().slice(0, 10);
-  const { count: openGigs } = await supabase
-    .from("gigs")
-    .select("id", { count: "exact", head: true })
-    .eq("visibility", "published")
-    .gte("date", today);
+
+  const [{ data: heroGigs }, { count: actCount }, { data: allOpen }] = await Promise.all([
+    supabase.rpc("search_gigs", { p_limit: 3 }),
+    supabase
+      .from("entertainer_profiles")
+      .select("id", { count: "exact", head: true })
+      .not("stage_name", "is", null),
+    supabase
+      .from("gigs")
+      .select("category, location_text")
+      .eq("visibility", "published")
+      .gte("date", today)
+      .limit(500),
+  ]);
+
+  const open = allOpen ?? [];
+  const counts = open.reduce<Record<string, number>>((acc, g) => {
+    acc[g.category] = (acc[g.category] ?? 0) + 1;
+    return acc;
+  }, {});
+  const towns = new Set(open.map((g) => g.location_text)).size;
+
+  const stats = [
+    { value: open.length, label: "gigs open now" },
+    { value: actCount ?? 0, label: "acts on GIGLY" },
+    { value: towns, label: towns === 1 ? "town covered" : "towns covered" },
+    { value: 0, label: "commission, ever", prefix: "£" },
+  ].filter((s) => s.value > 0 || s.prefix);
 
   return (
-    <>
+    <div className="grain flex flex-1 flex-col">
       <SiteHeader />
 
       <main className="flex-1">
-        {/* ---------------------------------------------------------- hero */}
-        <section className="mx-auto w-full max-w-5xl px-6 pt-16 pb-14 sm:pt-24 sm:pb-20">
-          <p className="text-xs font-semibold tracking-widest text-chalk-faint uppercase">
-            {t("home.hero.eyebrow")}
-          </p>
-          <h1 className="mt-4 max-w-3xl text-4xl leading-[1.05] font-extrabold tracking-tight text-balance sm:text-6xl">
-            {t("home.hero.title")}
-          </h1>
-          <p className="mt-6 max-w-2xl text-lg leading-relaxed text-chalk-dim">{t("home.hero.body")}</p>
-
-          <div className="mt-10 flex flex-col gap-3 sm:flex-row">
-            <Link
-              href="/signup?type=entertainer"
-              className="rounded-xl bg-hot-500 px-6 py-4 text-center text-base font-semibold text-white hover:bg-hot-400"
-            >
-              {t("home.hero.cta_entertainer")}
-            </Link>
-            <Link
-              href="/signup?type=venue"
-              className="rounded-xl bg-ink-700 px-6 py-4 text-center text-base font-semibold text-chalk hover:bg-ink-600"
-            >
-              {t("home.hero.cta_venue")}
-            </Link>
-          </div>
-
-          {openGigs ? (
-            <p className="mt-8 text-sm text-chalk-faint">
-              <Link href="/gigs" className="text-hot-500 hover:text-hot-400">
-                {openGigs} gig{openGigs === 1 ? "" : "s"} open right now
-              </Link>{" "}
-              — browse without an account.
-            </p>
-          ) : null}
-        </section>
-
-        {/* ------------------------------------------------ two audiences */}
-        <section className="border-y border-ink-700 bg-ink-800/40">
-          <div className="mx-auto grid w-full max-w-5xl gap-px px-6 py-14 md:grid-cols-2 md:gap-12">
+        {/* ------------------------------------------------------------ hero */}
+        <section className="stage-wash">
+          <div className="mx-auto grid w-full max-w-6xl gap-12 px-6 pt-16 pb-16 lg:grid-cols-[1.15fr_1fr] lg:items-center lg:gap-16 lg:pt-24 lg:pb-24">
             <div>
-              <h2 className="text-2xl font-bold">{t("home.entertainers.title")}</h2>
-              <p className="mt-3 text-chalk-dim">{t("home.entertainers.body")}</p>
-              <ul className="mt-6 space-y-3">
-                {[t("home.entertainers.point_1"), t("home.entertainers.point_2"), t("home.entertainers.point_3")].map(
-                  (p) => (
-                    <li key={p} className="flex gap-3 text-sm text-chalk">
-                      <span className="mt-0.5 text-hot-500">—</span>
-                      <span>{p}</span>
-                    </li>
-                  ),
-                )}
-              </ul>
-              <Link
-                href="/signup?type=entertainer"
-                className="mt-6 inline-block text-sm font-semibold text-hot-500 hover:text-hot-400"
+              <p className="rise text-xs font-semibold tracking-[0.2em] text-hot-400 uppercase">
+                {t("home.hero.eyebrow")}
+              </p>
+
+              <h1
+                className="rise mt-5 text-[2.75rem] leading-[0.98] font-extrabold tracking-tight text-balance sm:text-6xl lg:text-[4.25rem]"
+                style={{ animationDelay: "60ms" }}
               >
-                Create an entertainer profile →
-              </Link>
+                {t("home.hero.title")}
+              </h1>
+
+              <p
+                className="rise mt-6 max-w-xl text-lg leading-relaxed text-chalk-dim"
+                style={{ animationDelay: "120ms" }}
+              >
+                {t("home.hero.body")}
+              </p>
+
+              <div
+                className="rise mt-9 flex flex-col gap-3 sm:flex-row"
+                style={{ animationDelay: "180ms" }}
+              >
+                <Link
+                  href="/signup?type=entertainer"
+                  className="rounded-xl bg-hot-500 px-7 py-4 text-center text-base font-semibold text-white shadow-[0_10px_40px_-14px] shadow-hot-500 transition-colors hover:bg-hot-400"
+                >
+                  {t("home.hero.cta_entertainer")}
+                </Link>
+                <Link
+                  href="/signup?type=venue"
+                  className="rounded-xl border border-ink-600 bg-ink-800/70 px-7 py-4 text-center text-base font-semibold text-chalk transition-colors hover:border-chalk-faint"
+                >
+                  {t("home.hero.cta_venue")}
+                </Link>
+              </div>
+
+              {stats.length > 0 ? (
+                <dl
+                  className="rise mt-12 flex flex-wrap gap-x-10 gap-y-5 border-t border-ink-700 pt-7"
+                  style={{ animationDelay: "240ms" }}
+                >
+                  {stats.map((s) => (
+                    <div key={s.label}>
+                      <dt className="sr-only">{s.label}</dt>
+                      <dd>
+                        <span className="block text-2xl font-extrabold text-chalk tabular-nums">
+                          {s.prefix}
+                          {s.value}
+                        </span>
+                        <span className="mt-0.5 block text-xs tracking-wide text-chalk-faint uppercase">
+                          {s.label}
+                        </span>
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+              ) : null}
             </div>
 
-            <div className="mt-12 md:mt-0">
-              <h2 className="text-2xl font-bold">{t("home.venues.title")}</h2>
-              <p className="mt-3 text-chalk-dim">{t("home.venues.body")}</p>
-              <ul className="mt-6 space-y-3">
-                {[t("home.venues.point_1"), t("home.venues.point_2"), t("home.venues.point_3")].map((p) => (
-                  <li key={p} className="flex gap-3 text-sm text-chalk">
-                    <span className="mt-0.5 text-hot-500">—</span>
-                    <span>{p}</span>
-                  </li>
-                ))}
-              </ul>
-              <Link
-                href="/signup?type=venue"
-                className="mt-6 inline-block text-sm font-semibold text-hot-500 hover:text-hot-400"
-              >
-                Post your first gig →
-              </Link>
+            <div className="rise lg:pl-4" style={{ animationDelay: "300ms" }}>
+              <HeroGigs gigs={(heroGigs ?? []) as HeroGig[]} />
             </div>
           </div>
         </section>
 
-        {/* ---------------------------------------------------- how it works */}
-        <section className="mx-auto w-full max-w-5xl px-6 py-16">
-          <h2 className="text-2xl font-bold">{t("home.how.title")}</h2>
-          <ol className="mt-8 grid gap-8 md:grid-cols-3">
-            {[1, 2, 3].map((n) => (
-              <li key={n} className="relative border-t border-ink-700 pt-5">
-                <span className="text-xs font-bold tracking-widest text-hot-500">0{n}</span>
-                <h3 className="mt-2 font-semibold text-chalk">
-                  {t(`home.how.step_${n}_title` as "home.how.step_1_title")}
-                </h3>
-                <p className="mt-2 text-sm leading-relaxed text-chalk-dim">
-                  {t(`home.how.step_${n}_body` as "home.how.step_1_body")}
-                </p>
-              </li>
+        {/* -------------------------------------------------------- browse by */}
+        {open.length > 0 ? (
+          <section className="border-y border-ink-700 bg-ink-850/60">
+            <div className="mx-auto w-full max-w-6xl px-6 py-8">
+              <div className="flex flex-wrap items-center gap-x-6 gap-y-4">
+                <p className="text-sm font-semibold text-chalk">Looking for something specific?</p>
+                <CategoryStrip counts={counts} />
+              </div>
+            </div>
+          </section>
+        ) : null}
+
+        {/* --------------------------------------------------- two audiences */}
+        <section className="mx-auto w-full max-w-6xl px-6 py-20">
+          <div className="grid gap-6 md:grid-cols-2">
+            {[
+              {
+                key: "entertainers",
+                title: t("home.entertainers.title"),
+                body: t("home.entertainers.body"),
+                points: [
+                  t("home.entertainers.point_1"),
+                  t("home.entertainers.point_2"),
+                  t("home.entertainers.point_3"),
+                ],
+                cta: { href: "/signup?type=entertainer", label: "Create an entertainer profile" },
+              },
+              {
+                key: "venues",
+                title: t("home.venues.title"),
+                body: t("home.venues.body"),
+                points: [t("home.venues.point_1"), t("home.venues.point_2"), t("home.venues.point_3")],
+                cta: { href: "/entertainers", label: "Browse acts near you" },
+              },
+            ].map((side) => (
+              <div key={side.key} className="panel lit-edge flex flex-col p-8">
+                <h2 className="text-2xl font-bold">{side.title}</h2>
+                <p className="mt-3 leading-relaxed text-chalk-dim">{side.body}</p>
+
+                <ul className="mt-7 flex-1 space-y-3.5">
+                  {side.points.map((point) => (
+                    <li key={point} className="flex gap-3 text-sm text-chalk">
+                      <span
+                        aria-hidden
+                        className="mt-2 size-1.5 shrink-0 rounded-full bg-hot-500"
+                      />
+                      <span>{point}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                <Link
+                  href={side.cta.href}
+                  className="mt-8 inline-block text-sm font-semibold text-hot-500 transition-colors hover:text-hot-400"
+                >
+                  {side.cta.label} →
+                </Link>
+              </div>
             ))}
-          </ol>
+          </div>
         </section>
 
-        {/* ------------------------------------------------------------- cta */}
-        <section className="mx-auto w-full max-w-5xl px-6 pb-20">
-          <div className="rounded-2xl border border-hot-500/30 bg-hot-500/10 p-8 sm:p-12">
-            <Wordmark className="text-3xl" />
-            <h2 className="mt-4 text-2xl font-bold">{t("home.cta.title")}</h2>
-            <p className="mt-2 max-w-xl text-chalk-dim">{t("home.cta.body")}</p>
-            <Link
-              href="/signup"
-              className="mt-6 inline-block rounded-xl bg-hot-500 px-6 py-4 text-base font-semibold text-white hover:bg-hot-400"
-            >
-              {t("home.cta.button")}
-            </Link>
+        {/* -------------------------------------------------- how it works */}
+        <section className="stage-wash-soft relative border-y border-ink-700 bg-ink-850/40">
+          <div className="mx-auto w-full max-w-6xl px-6 py-20">
+            <h2 className="text-3xl font-bold tracking-tight">{t("home.how.title")}</h2>
+
+            <ol className="mt-12 grid gap-10 md:grid-cols-3 md:gap-8">
+              {[1, 2, 3].map((n) => (
+                <li key={n} className="relative">
+                  {/* The rule doubles as the connector between steps on wide
+                      screens; it is decoration only, so it is hidden from
+                      assistive tech and the ordered list carries the sequence. */}
+                  <div aria-hidden className="mb-6 flex items-center gap-3">
+                    <span className="flex size-9 shrink-0 items-center justify-center rounded-full border border-hot-500/40 bg-hot-500/10 text-sm font-bold text-hot-400 tabular-nums">
+                      {n}
+                    </span>
+                    <span className="h-px flex-1 bg-gradient-to-r from-ink-600 to-transparent" />
+                  </div>
+
+                  <h3 className="text-lg font-semibold text-chalk">
+                    {t(`home.how.step_${n}_title` as "home.how.step_1_title")}
+                  </h3>
+                  <p className="mt-2.5 leading-relaxed text-chalk-dim">
+                    {t(`home.how.step_${n}_body` as "home.how.step_1_body")}
+                  </p>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </section>
+
+        {/* --------------------------------------------------------------- cta */}
+        <section className="mx-auto w-full max-w-6xl px-6 py-20">
+          <div className="relative overflow-hidden rounded-2xl border border-hot-500/25 p-10 sm:p-16">
+            <div
+              aria-hidden
+              className="absolute inset-0 -z-10 bg-[radial-gradient(40rem_20rem_at_20%_0%,color-mix(in_oklab,var(--color-hot-500)_22%,transparent),transparent_70%),radial-gradient(30rem_18rem_at_90%_100%,color-mix(in_oklab,var(--color-ultra)_20%,transparent),transparent_70%)]"
+            />
+
+            <h2 className="max-w-2xl text-3xl font-extrabold tracking-tight text-balance sm:text-4xl">
+              {t("home.cta.title")}
+            </h2>
+            <p className="mt-4 max-w-xl text-lg text-chalk-dim">{t("home.cta.body")}</p>
+
+            <div className="mt-9 flex flex-col gap-3 sm:flex-row">
+              <Link
+                href="/signup"
+                className="rounded-xl bg-hot-500 px-7 py-4 text-center text-base font-semibold text-white shadow-[0_10px_40px_-14px] shadow-hot-500 transition-colors hover:bg-hot-400"
+              >
+                {t("home.cta.button")}
+              </Link>
+              <Link
+                href="/gigs"
+                className="rounded-xl border border-ink-600 bg-ink-900/50 px-7 py-4 text-center text-base font-semibold text-chalk transition-colors hover:border-chalk-faint"
+              >
+                Browse gigs first
+              </Link>
+            </div>
           </div>
         </section>
       </main>
 
       <SiteFooter />
-    </>
+    </div>
   );
 }

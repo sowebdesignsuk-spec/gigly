@@ -84,11 +84,11 @@ export default async function VenuePublicProfile({ params }: Params) {
   };
 
   return (
-    <main className="flex flex-1 flex-col">
+    <main className="grain flex flex-1 flex-col">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <SiteHeader />
 
-      <div className="mx-auto w-full max-w-3xl flex-1 px-6 py-10">
+      <div className="mx-auto w-full max-w-3xl flex-1 px-6 py-12">
         <div className="space-y-2">
           <h1 className="text-3xl font-bold">{venue.venue_name}</h1>
           <p className="text-sm text-chalk-dim">

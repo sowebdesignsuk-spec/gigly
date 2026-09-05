@@ -11,10 +11,10 @@ export default async function AboutPage() {
   const t = await loadContent("about");
 
   return (
-    <>
+    <div className="grain flex flex-1 flex-col">
       <SiteHeader />
-      <main className="mx-auto w-full max-w-2xl flex-1 px-6 py-16">
-        <h1 className="text-4xl font-extrabold tracking-tight text-balance">{t("about.title")}</h1>
+      <main className="stage-wash mx-auto w-full max-w-2xl flex-1 px-6 py-20">
+        <h1 className="text-4xl font-extrabold tracking-tight text-balance sm:text-5xl">{t("about.title")}</h1>
         <div className="mt-8 space-y-5 text-lg leading-relaxed text-chalk-dim">
           {t("about.body")
             .split("\n\n")
@@ -35,6 +35,6 @@ export default async function AboutPage() {
         </section>
       </main>
       <SiteFooter />
-    </>
+    </div>
   );
 }
