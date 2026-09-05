@@ -1,11 +1,14 @@
 import Link from "next/link";
 
-import { CategoryStrip } from "@/components/marketing/category-strip";
+import Image from "next/image";
+
+import { CategoryTiles } from "@/components/marketing/category-tiles";
 import { HeroGigs, type HeroGig } from "@/components/marketing/hero-gigs";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
 import { loadContent } from "@/lib/cms/content";
 import { createClient } from "@/lib/supabase/server";
+import { HERO_SHOT, stockUrl } from "@/lib/media/stock";
 
 /**
  * The public homepage.
@@ -53,7 +56,21 @@ export default async function HomePage() {
 
       <main className="flex-1">
         {/* ------------------------------------------------------------ hero */}
-        <section className="stage-wash">
+        <section className="stage-wash relative">
+          {/* A real stage, dimmed hard so the type stays the loudest thing on
+              the page and the brand wash still reads over it. */}
+          <div aria-hidden className="absolute inset-0 -z-20 overflow-hidden">
+            <Image
+              src={stockUrl(HERO_SHOT.id, 1800, 900)}
+              alt=""
+              fill
+              priority
+              sizes="100vw"
+              className="object-cover opacity-25"
+            />
+            <div className="absolute inset-0 bg-gradient-to-b from-ink-900/70 via-ink-900/85 to-ink-900" />
+          </div>
+
           <div className="mx-auto grid w-full max-w-6xl gap-12 px-6 pt-16 pb-16 lg:grid-cols-[1.15fr_1fr] lg:items-center lg:gap-16 lg:pt-24 lg:pb-24">
             <div>
               <p className="rise text-xs font-semibold tracking-[0.2em] text-hot-400 uppercase">
@@ -124,10 +141,15 @@ export default async function HomePage() {
         {/* -------------------------------------------------------- browse by */}
         {open.length > 0 ? (
           <section className="border-y border-ink-700 bg-ink-850/60">
-            <div className="mx-auto w-full max-w-6xl px-6 py-8">
-              <div className="flex flex-wrap items-center gap-x-6 gap-y-4">
-                <p className="text-sm font-semibold text-chalk">Looking for something specific?</p>
-                <CategoryStrip counts={counts} />
+            <div className="mx-auto w-full max-w-6xl px-6 py-12">
+              <div className="flex flex-wrap items-baseline justify-between gap-3">
+                <h2 className="text-xl font-bold">Browse by act</h2>
+                <Link href="/entertainers" className="text-sm font-semibold text-hot-500 hover:text-hot-400">
+                  See every act →
+                </Link>
+              </div>
+              <div className="mt-6">
+                <CategoryTiles counts={counts} />
               </div>
             </div>
           </section>

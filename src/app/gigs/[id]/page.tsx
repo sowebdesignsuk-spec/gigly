@@ -3,7 +3,10 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 
 import { ApplyPanel } from "@/components/gig/apply-panel";
+import Image from "next/image";
+
 import { SiteHeader } from "@/components/layout/site-header";
+import { categoryShot, stockUrl } from "@/lib/media/stock";
 import { createClient } from "@/lib/supabase/server";
 import { ENTERTAINER_CATEGORIES } from "@/lib/profile/constants";
 import {
@@ -92,6 +95,20 @@ export default async function GigDetailPage({ params }: Params) {
       <SiteHeader />
 
       <div className="mx-auto w-full max-w-3xl flex-1 px-6 py-12">
+        {/* Illustrative of the kind of act wanted, not a photo of this gig —
+            which is why it carries no caption claiming otherwise. */}
+        <div className="relative mb-8 aspect-21/9 overflow-hidden rounded-2xl border border-ink-700">
+          <Image
+            src={stockUrl(categoryShot(gig.category).id, 1200, 515)}
+            alt=""
+            fill
+            priority
+            sizes="(max-width: 768px) 100vw, 768px"
+            className="object-cover opacity-60"
+          />
+          <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-ink-900 via-ink-900/40 to-transparent" />
+        </div>
+
         <div className="flex flex-wrap items-center gap-2">
           {gig.is_urgent ? (
             <span className="rounded-full bg-hot-500/15 px-2.5 py-0.5 text-xs font-semibold text-hot-400">
