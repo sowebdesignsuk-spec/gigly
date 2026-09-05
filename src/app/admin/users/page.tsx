@@ -14,7 +14,12 @@ const STATUS_STYLE: Record<string, string> = {
   deleted: "bg-ink-700 text-chalk-faint",
 };
 
-/** User management — Section 5, Week 9.1 and 9.2. */
+/**
+ * User management — Section 5, Week 9.1 and 9.2.
+ *
+ * Email and role live in profile_private, which admins can read in full. The
+ * join is an embed on the primary-key relationship, so it is one query.
+ */
 export default async function AdminUsersPage({ searchParams }: { searchParams: Search }) {
   const { q } = await searchParams;
   const supabase = await createClient();
@@ -23,15 +28,32 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: S
     data: { user: me },
   } = await supabase.auth.getUser();
 
+  const term = q?.trim();
+
+  // Search spans two tables. Matching emails are resolved to ids first, then
+  // combined with the name match — PostgREST cannot OR across an embed.
+  let idsByEmail: string[] = [];
+  if (term) {
+    const { data } = await supabase
+      .from("profile_private")
+      .select("user_id")
+      .ilike("email", `%${term}%`)
+      .limit(100);
+    idsByEmail = (data ?? []).map((r) => r.user_id);
+  }
+
   let query = supabase
     .from("profiles")
-    .select("id, full_name, email, account_type, role, status, onboarding_complete, created_at")
+    .select(
+      "id, full_name, account_type, status, onboarding_complete, created_at, profile_private(email, role)",
+    )
     .order("created_at", { ascending: false })
     .limit(100);
 
-  if (q?.trim()) {
-    const term = `%${q.trim()}%`;
-    query = query.or(`email.ilike.${term},full_name.ilike.${term}`);
+  if (term) {
+    const clauses = [`full_name.ilike.%${term}%`];
+    if (idsByEmail.length) clauses.push(`id.in.(${idsByEmail.join(",")})`);
+    query = query.or(clauses.join(","));
   }
 
   const { data: users } = await query;
@@ -73,19 +95,20 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: S
             {(users ?? []).map((u) => {
               const isMe = u.id === me?.id;
               const gone = u.status === "deleted";
+              const priv = u.profile_private;
 
               return (
                 <tr key={u.id} className="align-top">
                   <td className="px-4 py-3">
                     <p className="font-medium text-chalk">
                       {u.full_name || <span className="text-chalk-faint">(no name)</span>}
-                      {u.role === "admin" ? (
+                      {priv?.role === "admin" ? (
                         <span className="ml-2 rounded-full bg-hold/15 px-2 py-0.5 text-xs text-hold">
                           admin
                         </span>
                       ) : null}
                     </p>
-                    <p className="text-xs text-chalk-dim">{u.email}</p>
+                    <p className="text-xs text-chalk-dim">{priv?.email ?? "—"}</p>
                   </td>
                   <td className="px-4 py-3 text-chalk-dim capitalize">
                     {u.account_type}

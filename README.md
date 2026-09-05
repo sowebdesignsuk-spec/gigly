@@ -61,8 +61,13 @@ the point it occurs:
 6. **`reviews.text` → `reviews.body`** — `text` is also a type name.
 7. **`profiles.email` kept but trigger-synced** — the spec's "synced from
    auth.users" had no mechanism.
-8. **`public_profiles` view** — profiles holds email and phone, so the table is
-   private to its owner and this view carries the publicly safe columns.
+8. **Private columns split into `profile_private`** — email, phone and the
+   admin role live in their own owner-only table. `profiles` holds nothing
+   private, so it is publicly readable for active rows and the
+   `public_profiles` view runs as the caller (`security_invoker = on`). The
+   first version used a definer view over a mixed table; that view accepted
+   writes that bypassed RLS (closed in migration `20260905160100`) and the
+   split (`20260905170000`) removes the class of bug rather than the instance.
 
 ## Security model
 

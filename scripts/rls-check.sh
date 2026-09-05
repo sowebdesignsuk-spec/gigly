@@ -34,7 +34,11 @@ get()  { curl -s -H "apikey: $KEY" "$URL/$1"; }
 code() { curl -s -o /dev/null -w '%{http_code}' -H "apikey: $KEY" -H 'Content-Type: application/json' "$@"; }
 
 echo "Anonymous reads that must return nothing:"
-expect "profiles (holds email + phone)"    "[]" "$(get 'profiles?select=id')"
+expect "profile_private (email, phone, role)" "[]" "$(get 'profile_private?select=user_id')"
+# profiles no longer has these columns at all. Asking for one must be a hard
+# error, not an empty result — proves the split actually happened.
+expect "profiles has no email column"      "400" "$(code "$URL/profiles?select=email&limit=1")"
+expect "profiles has no role column"       "400" "$(code "$URL/profiles?select=role&limit=1")"
 expect "applications (rival fees)"         "[]" "$(get 'applications?select=id')"
 expect "bookings (financial records)"      "[]" "$(get 'bookings?select=id')"
 expect "conversations"                     "[]" "$(get 'conversations?select=id')"
@@ -60,7 +64,7 @@ expect "…and the name is unchanged"           "$before" "$after"
 # rewriter (500) before it even reaches the privilege check (401/403). Any of
 # those is a refusal — what matters is that the row is untouched afterwards.
 view_code="$(code -X PATCH "$URL/public_profiles?id=eq.$real_id" -d '{"full_name":"pwned"}')"
-[[ "$view_code" == "401" || "$view_code" == "403" || "$view_code" == "500" ]] && view_code="refused"
+[[ "$view_code" == "204" || "$view_code" == "401" || "$view_code" == "403" || "$view_code" == "500" ]] && view_code="refused"
 expect "update via public_profiles view refused" "refused" "$view_code"
 expect "…and the name is still unchanged"        "$before" "$(get "public_profiles?select=full_name&id=eq.$real_id")"
 
@@ -74,6 +78,7 @@ expect "admin_erase_user refused" "refused" "$admin_code"
 
 echo "Public surfaces that must stay public:"
 expect "public_profiles readable"  "200" "$(code "$URL/public_profiles?select=id&limit=1")"
+expect "profiles (public columns) readable" "200" "$(code "$URL/profiles?select=id,full_name&limit=1")"
 expect "published gigs readable"   "200" "$(code "$URL/gigs?select=id&visibility=eq.published&limit=1")"
 expect "search_gigs callable"      "200" "$(code -X POST "$URL/rpc/search_gigs" -d '{}')"
 

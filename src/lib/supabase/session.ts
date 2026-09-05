@@ -73,7 +73,7 @@ export async function updateSession(request: NextRequest) {
   if (user && isProtected) {
     const { data: profile } = await supabase
       .from("profiles")
-      .select("account_type, role, onboarding_complete")
+      .select("account_type, onboarding_complete")
       .eq("id", user.id)
       .single();
 
@@ -92,11 +92,22 @@ export async function updateSession(request: NextRequest) {
         return NextResponse.redirect(home);
       }
 
-      if (path.startsWith("/admin") && profile.role !== "admin") {
-        const home = request.nextUrl.clone();
-        home.pathname = HOME_FOR[profile.account_type];
-        home.search = "";
-        return NextResponse.redirect(home);
+      if (path.startsWith("/admin")) {
+        // role lives in profile_private, which a user can only read for
+        // themselves — so this lookup is one extra query on /admin paths
+        // only, never on the ordinary dashboards.
+        const { data: priv } = await supabase
+          .from("profile_private")
+          .select("role")
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+        if (priv?.role !== "admin") {
+          const home = request.nextUrl.clone();
+          home.pathname = HOME_FOR[profile.account_type];
+          home.search = "";
+          return NextResponse.redirect(home);
+        }
       }
     }
   }

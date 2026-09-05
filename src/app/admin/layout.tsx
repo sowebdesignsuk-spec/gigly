@@ -28,13 +28,12 @@ export default async function AdminLayout({ children }: LayoutProps<"/admin">) {
 
   if (!user) redirect("/login?next=/admin");
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("full_name, role, account_type")
-    .eq("id", user.id)
-    .single();
+  const [{ data: profile }, { data: priv }] = await Promise.all([
+    supabase.from("profiles").select("full_name, account_type").eq("id", user.id).single(),
+    supabase.from("profile_private").select("role").eq("user_id", user.id).maybeSingle(),
+  ]);
 
-  if (profile?.role !== "admin") {
+  if (!profile || priv?.role !== "admin") {
     redirect(profile ? HOME_FOR[profile.account_type] : "/");
   }
 

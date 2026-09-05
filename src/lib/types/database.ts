@@ -543,12 +543,53 @@ export type Database = {
           },
         ]
       }
+      profile_private: {
+        Row: {
+          created_at: string
+          email: string
+          phone: string | null
+          role: Database["public"]["Enums"]["user_role"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          phone?: string | null
+          role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          phone?: string | null
+          role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profile_private_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profile_private_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           account_type: Database["public"]["Enums"]["account_type"]
           avatar_url: string | null
           created_at: string
-          email: string
           full_name: string
           id: string
           location: unknown
@@ -556,8 +597,6 @@ export type Database = {
           location_lng: number | null
           location_text: string | null
           onboarding_complete: boolean
-          phone: string | null
-          role: Database["public"]["Enums"]["user_role"]
           status: Database["public"]["Enums"]["account_status"]
           updated_at: string
         }
@@ -565,7 +604,6 @@ export type Database = {
           account_type: Database["public"]["Enums"]["account_type"]
           avatar_url?: string | null
           created_at?: string
-          email: string
           full_name: string
           id: string
           location?: unknown
@@ -573,8 +611,6 @@ export type Database = {
           location_lng?: number | null
           location_text?: string | null
           onboarding_complete?: boolean
-          phone?: string | null
-          role?: Database["public"]["Enums"]["user_role"]
           status?: Database["public"]["Enums"]["account_status"]
           updated_at?: string
         }
@@ -582,7 +618,6 @@ export type Database = {
           account_type?: Database["public"]["Enums"]["account_type"]
           avatar_url?: string | null
           created_at?: string
-          email?: string
           full_name?: string
           id?: string
           location?: unknown
@@ -590,8 +625,6 @@ export type Database = {
           location_lng?: number | null
           location_text?: string | null
           onboarding_complete?: boolean
-          phone?: string | null
-          role?: Database["public"]["Enums"]["user_role"]
           status?: Database["public"]["Enums"]["account_status"]
           updated_at?: string
         }
@@ -1105,3 +1138,4 @@ export type Conversation = Tables<"conversations">;
 export type Message = Tables<"messages">;
 export type Review = Tables<"reviews">;
 export type Notification = Tables<"notifications">;
+export type ProfilePrivate = Tables<"profile_private">;
