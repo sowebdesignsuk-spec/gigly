@@ -73,8 +73,13 @@ it after any migration touching a policy. It exits non-zero on failure.
 There is no self-service route to admin. In the Supabase SQL editor:
 
 ```sql
-update public.profiles set role = 'admin' where email = 'you@example.com';
+update public.profile_private set role = 'admin' where email = 'you@example.com';
 ```
+
+(`role` and `email` live in `profile_private`, not `profiles` — see migration
+`20260905170000`. The comment at the bottom of `20260905160000_admin.sql` still
+names `profiles`; it was correct when written and is left as-is because pushed
+migrations are never edited.)
 
 Admins reach `/admin`. The proxy redirects non-admins, and every admin RPC
 re-checks `is_admin()` internally, so the route guard is not the security

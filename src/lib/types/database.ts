@@ -699,6 +699,42 @@ export type Database = {
           },
         ]
       }
+      site_content: {
+        Row: {
+          key: string
+          updated_at: string
+          updated_by: string | null
+          value: string
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          updated_by?: string | null
+          value: string
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "site_content_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "site_content_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       venue_profiles: {
         Row: {
           address_line_1: string
@@ -850,10 +886,29 @@ export type Database = {
           venue_user: string
         }[]
       }
+      demo_create_user: {
+        Args: {
+          p_email: string
+          p_name: string
+          p_type: Database["public"]["Enums"]["account_type"]
+        }
+        Returns: string
+      }
+      demo_password: { Args: never; Returns: string }
+      get_or_create_conversation: {
+        Args: { p_booking_id?: string; p_gig_id?: string; p_other_user: string }
+        Returns: string
+      }
       is_admin: { Args: never; Returns: boolean }
+      mark_completed_bookings: { Args: never; Returns: number }
+      mark_conversation_read: {
+        Args: { p_conversation_id: string }
+        Returns: undefined
+      }
       miles_to_metres: { Args: { miles: number }; Returns: number }
       my_entertainer_id: { Args: never; Returns: string }
       my_venue_id: { Args: never; Returns: string }
+      remove_demo_data: { Args: never; Returns: string }
       search_gigs: {
         Args: {
           p_budget_min?: number
@@ -888,6 +943,8 @@ export type Database = {
           venue_type: Database["public"]["Enums"]["venue_type"]
         }[]
       }
+      seed_demo_data: { Args: never; Returns: string }
+      unread_message_count: { Args: never; Returns: number }
     }
     Enums: {
       account_status: "active" | "suspended" | "deleted"
@@ -1139,3 +1196,4 @@ export type Message = Tables<"messages">;
 export type Review = Tables<"reviews">;
 export type Notification = Tables<"notifications">;
 export type ProfilePrivate = Tables<"profile_private">;
+export type SiteContent = Tables<"site_content">;

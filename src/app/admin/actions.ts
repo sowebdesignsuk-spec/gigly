@@ -67,3 +67,19 @@ export async function setReviewVisibility(formData: FormData) {
 
   revalidatePath("/admin/reviews");
 }
+
+/** Loads the demo dataset. Idempotent — a second call is a no-op. */
+export async function loadDemoData() {
+  const supabase = await createClient();
+  await supabase.rpc("seed_demo_data");
+  revalidatePath("/admin");
+  revalidatePath("/gigs");
+}
+
+/** Removes every @demo.gigly.invalid account and everything hanging off it. */
+export async function removeDemoData() {
+  const supabase = await createClient();
+  await supabase.rpc("remove_demo_data");
+  revalidatePath("/admin");
+  revalidatePath("/gigs");
+}

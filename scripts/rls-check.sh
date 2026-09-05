@@ -51,6 +51,8 @@ echo "Anonymous writes that must be rejected (401):"
 expect "insert notification"  "401" "$(code -X POST "$URL/notifications" -d '{"user_id":"00000000-0000-0000-0000-000000000000","type":"system","title":"x","body":"y"}')"
 expect "insert gig"           "401" "$(code -X POST "$URL/gigs" -d '{"venue_id":"00000000-0000-0000-0000-000000000000","title":"x","category":"dj","description":"x","date":"2030-01-01","start_time":"20:00","location_text":"x","budget_min":1}')"
 expect "insert application"   "401" "$(code -X POST "$URL/applications" -d '{"gig_id":"00000000-0000-0000-0000-000000000000","entertainer_id":"00000000-0000-0000-0000-000000000000"}')"
+expect "insert site_content"  "401" "$(code -X POST "$URL/site_content" -d '{"key":"home.hero.title","value":"pwned"}')"
+expect "insert booking"       "401" "$(code -X POST "$URL/bookings" -d '{"gig_id":"00000000-0000-0000-0000-000000000000","application_id":"00000000-0000-0000-0000-000000000000","venue_id":"00000000-0000-0000-0000-000000000000","entertainer_id":"00000000-0000-0000-0000-000000000000","agreed_fee":1}')"
 # A PATCH that RLS filters to zero rows returns 204, which looks like success.
 # So: target a REAL profile, ask for the updated rows back, and require none.
 real_id="$(get 'public_profiles?select=id&limit=1' | grep -oE '[0-9a-f-]{36}' | head -1)"
@@ -81,6 +83,8 @@ expect "public_profiles readable"  "200" "$(code "$URL/public_profiles?select=id
 expect "profiles (public columns) readable" "200" "$(code "$URL/profiles?select=id,full_name&limit=1")"
 expect "published gigs readable"   "200" "$(code "$URL/gigs?select=id&visibility=eq.published&limit=1")"
 expect "search_gigs callable"      "200" "$(code -X POST "$URL/rpc/search_gigs" -d '{}')"
+expect "site_content readable"     "200" "$(code "$URL/site_content?select=key&limit=1")"
+expect "seed_demo_data refused"      "refused" "$( c=$(code -X POST "$URL/rpc/seed_demo_data" -d '{}'); [[ "$c" == "401" || "$c" == "403" ]] && echo refused || echo "$c" )"
 
 echo
 printf '%d passed, %d failed\n' "$pass" "$fail"

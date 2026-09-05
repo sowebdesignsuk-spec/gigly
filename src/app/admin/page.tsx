@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 
+import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/server";
+import { loadDemoData, removeDemoData } from "./actions";
 
 export const metadata: Metadata = { title: "Admin" };
 
@@ -17,7 +19,14 @@ function Stat({ label, value, sub }: { label: string; value: number; sub?: strin
 /** Admin overview — Section 5, Week 9.3 "basic analytics view". */
 export default async function AdminOverviewPage() {
   const supabase = await createClient();
-  const { data, error } = await supabase.rpc("admin_stats").maybeSingle();
+  const [{ data, error }, { count: demoCount }] = await Promise.all([
+    supabase.rpc("admin_stats").maybeSingle(),
+    supabase
+      .from("profile_private")
+      .select("user_id", { count: "exact", head: true })
+      .like("email", "%@demo.gigly.invalid"),
+  ]);
+  const demoLoaded = (demoCount ?? 0) > 0;
 
   if (error || !data) {
     return (
@@ -65,6 +74,43 @@ export default async function AdminOverviewPage() {
           <Stat label="Offers waiting" value={data.offers_open} sub="sent, not yet answered" />
           <Stat label="Bookings" value={data.bookings_total} />
           <Stat label="Hidden reviews" value={data.reviews_hidden} />
+        </div>
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="text-xs font-semibold tracking-wide text-chalk-faint uppercase">
+          Demo data
+        </h2>
+        <div className="rounded-xl border border-ink-700 bg-ink-800 p-5">
+          <p className="text-sm text-chalk">
+            {demoLoaded
+              ? `Loaded — ${demoCount} demo accounts. Sign in as any of them with the password `
+              : "Five venues, eight acts, ten gigs, applications in every status, a booking, reviews and a message thread. All accounts share the password "}
+            <code className="rounded bg-ink-900 px-1.5 py-0.5 text-xs">gigly-demo</code>
+            {demoLoaded ? "." : ". Removable in one click."}
+          </p>
+          {demoLoaded ? (
+            <p className="mt-2 text-xs text-chalk-faint">
+              Try <code>dogandduck@demo.gigly.invalid</code> (venue) and{" "}
+              <code>neon@demo.gigly.invalid</code> (band) — they have a live thread and a
+              shortlisted application between them.
+            </p>
+          ) : null}
+          <div className="mt-4">
+            {demoLoaded ? (
+              <form action={removeDemoData}>
+                <Button type="submit" variant="secondary" className="px-4 py-2 text-xs text-stop">
+                  Remove demo data
+                </Button>
+              </form>
+            ) : (
+              <form action={loadDemoData}>
+                <Button type="submit" className="px-4 py-2 text-xs">
+                  Load demo data
+                </Button>
+              </form>
+            )}
+          </div>
         </div>
       </section>
 
